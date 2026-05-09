@@ -1,9 +1,10 @@
 {
     "name": "micro-claude",
     "private": true,
+    "type": "module",
     "scripts": {
         "dev": "bun run src/index.ts",
-        "build": "esbuild ./src/index.ts --bundle --platform=node --target=node18 --banner:js='#!/usr/bin/env node' --outfile=./dist/bin/index.cjs",
+        "build": "node scripts/build.mjs",
         "postbuild": "npm i -g",
         "test": "vitest run"
     },
@@ -12,12 +13,15 @@
         "@types/node": "^25.6.2",
         "dotenv": "^17.4.2",
         "esbuild": "^0.28.0",
-        "glob": "^13.0.6"
+        "glob": "^13.0.6",
+        "ink": "^4.4.1",
+        "react": "^18.3.1"
     },
     "bin": {
-        "mica": "dist/bin/index.cjs"
+        "mica": "dist/bin/index.js"
     },
     "devDependencies": {
+        "@types/react": "^18.3.28",
         "tsx": "^4.21.0",
         "typescript": "^6.0.3",
         "vitest": "^3.2.4"

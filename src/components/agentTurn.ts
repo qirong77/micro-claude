@@ -19,11 +19,18 @@ const client = new Anthropic({
     baseURL: ANTHROPIC_BASE_URL,
 });
 
+export interface AgentTurnCallbacks {
+    onText?: (text: string) => void;
+    onToolUse?: (name: string, input: Record<string, any>) => void;
+    onToolResult?: (name: string, result: string) => void;
+    onFinish?: () => void;
+}
+
 class AgentTurn {
     messages: Anthropic.MessageParam[] = [];
 
     constructor() {}
-    async run(userInput: string) {
+    async run(userInput: string, callbacks?: AgentTurnCallbacks) {
         const messages = this.messages;
         messages.push({ role: "user", content: userInput });
         while (true) {
@@ -40,19 +47,20 @@ class AgentTurn {
             const toolResults: Anthropic.ToolResultBlockParam[] = [];
             for (const block of response.content) {
                 if (block.type === "text") {
-                    process.stdout.write(block.text);
+                    callbacks?.onText?.(block.text);
                 }
 
                 if (block.type === "tool_use") {
                     hasToolUse = true;
+                    callbacks?.onToolUse?.(block.name, block.input as Record<string, any>);
                     let result: string;
                     try {
                         result = await executeTool(block.name, block.input as Record<string, any>);
                     } catch (error) {
-                        // 理论上 executeTool 不会再退出进程，但这里再做一层保险
                         const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
                         result = `工具 ${block.name} 执行异常：\n${message}`;
                     }
+                    callbacks?.onToolResult?.(block.name, result);
                     toolResults.push({
                         type: "tool_result",
                         tool_use_id: block.id,
@@ -68,9 +76,10 @@ class AgentTurn {
                 });
             }
 
-            process.stdout.write("\n");
-
-            if (!hasToolUse) return;
+            if (!hasToolUse) {
+                callbacks?.onFinish?.();
+                return;
+            }
         }
     }
 }
