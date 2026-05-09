@@ -193,7 +193,7 @@ export function StatusBar({
   return (
     <Box>
       <Text dimColor>
-        type / + command · ⏎ submit · \⏎ / ⇧⏎ newline · ⌃U clear
+        type / + command · ⏎ submit · \⏎ / ⇧⏎ newline · ⌃A/E jump · ⌃U clear
       </Text>
     </Box>
   );

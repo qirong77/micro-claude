@@ -263,6 +263,21 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
       return;
     }
 
+    // ── Ctrl+A / Ctrl+E — jump to line start / end ──
+    if (key.ctrl && _char === "a") {
+      const lineStart = inputValue.lastIndexOf("\n", cursorOffset - 1) + 1;
+      dispatch({ type: "move", cursor: lineStart });
+      return;
+    }
+    if (key.ctrl && _char === "e") {
+      const lineEnd = inputValue.indexOf("\n", cursorOffset);
+      dispatch({
+        type: "move",
+        cursor: lineEnd === -1 ? inputValue.length : lineEnd,
+      });
+      return;
+    }
+
     // ── Ctrl+U — clear all, or delete current line if multiline ──
     if (key.ctrl && _char === "u") {
       if (inputValue.includes("\n")) {
