@@ -22,7 +22,7 @@ const QUICK_COMMANDS: Command[] = [
     {
         name: "log",
         description: "导出会话日志到文件",
-        action: (addEntry, _updateLast, _args) => {
+        action: (addEntry, _updateLast) => {
             const msgs = agentTurn.messages;
             const fileName = "mica-session.json";
             const filePath = join(process.cwd(), fileName);
