@@ -370,6 +370,7 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
           filter={filterText}
         />
       )}
+      <Box paddingBottom={1} />
     </Box>
   );
 }
