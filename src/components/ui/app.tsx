@@ -351,9 +351,6 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
     }
 
     // ── Backspace / Delete — deletes char before cursor ──
-    // Note: public Ink v4.4.1 maps \x7f (Mac Delete key) to key.delete, not
-    // key.backspace. We handle both as backspace since Mac Delete means
-    // "delete char before cursor."
     if (key.backspace || key.delete) {
       dispatch({ type: "backspace" });
       setSelectedIndex(0);
