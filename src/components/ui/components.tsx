@@ -156,7 +156,7 @@ export function InputBar({
 const STATUS_ICONS: Record<string, string> = {
   "正在发送请求": "📡",
   "正在调用工具": "🔧",
-  "正在思考": "🤔",
+  "正在思考": "->",
 };
 
 let dotFrame = 0;
