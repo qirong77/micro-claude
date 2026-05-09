@@ -133,12 +133,27 @@ export function InputBar({
 const STATUS_ICONS: Record<string, string> = {
   "正在发送请求": "📡",
   "正在调用工具": "🔧",
-  "等待工具结果": "⏳",
   "正在思考": "🤔",
-  "处理完成": "✅",
 };
 
+let dotFrame = 0;
+
 export function RunningStatus({ status }: { status?: string }): React.ReactNode {
+  const [dots, setDots] = React.useState("");
+
+  React.useEffect(() => {
+    if (!status) {
+      setDots("");
+      return;
+    }
+    // 动态动画帧
+    const interval = setInterval(() => {
+      dotFrame = (dotFrame + 1) % 4;
+      setDots(".".repeat(dotFrame));
+    }, 250);
+    return () => clearInterval(interval);
+  }, [status]);
+
   if (!status) return null;
 
   const icon = STATUS_ICONS[status] || "⚡";
@@ -150,7 +165,7 @@ export function RunningStatus({ status }: { status?: string }): React.ReactNode 
         <Text italic color={C.cyan}>
           {status}
         </Text>
-        <Text color={C.cyan}>...</Text>
+        <Text color={C.cyan}>{dots}</Text>
       </Text>
     </Box>
   );

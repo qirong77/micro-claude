@@ -64,19 +64,19 @@ ui.onUserSubmit(async (text) => {
     ui.setState({ isLoading: true, status: "正在发送请求" });
 
     await agentTurn.run(text, {
+        onThinking() {
+            ui.setState({ isLoading: true, status: "正在思考" });
+        },
         onText(chunk) {
             accumulatedText += chunk;
-            ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
+            ui.setState({ messages: [accumulatedText], isLoading: true });
         },
-        onToolUse(name, _input) {
+        onToolUse(name) {
             accumulatedText += `\n\n🔧 调用工具: ${name}`;
-            Object.keys(_input).forEach((key) => {
-                accumulatedText += `\n  ${key}: ${JSON.stringify(_input[key])}`;
-            });
-            ui.setState({ messages: [accumulatedText], isLoading: false, status: `正在调用工具: ${name}` });
+            ui.setState({ messages: [accumulatedText], isLoading: true, status: `正在调用工具: ${name}` });
         },
-        onToolResult(_name, result) {
-            ui.setState({ messages: [accumulatedText], isLoading: false, status: "等待工具结果" });
+        onToolResult() {
+            ui.setState({ isLoading: true, status: "正在思考" });
         },
         onFinish() {
             ui.setState({ isLoading: false, status: undefined });

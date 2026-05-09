@@ -356,9 +356,9 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
   return (
     <Box flexDirection="column" height="100%">
       <LogArea entries={entries} />
-      {isLoading && (
+      {isLoading && !status && (
         <Box paddingX={1}>
-          <Text color="#FF9800">🤔 Thinking...</Text>
+          <Text color="#888">▎</Text>
         </Box>
       )}
       <InputBar value={inputValue} cursorOffset={cursorOffset} />
