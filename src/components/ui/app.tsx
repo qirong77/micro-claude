@@ -4,6 +4,21 @@ import type { Command, LogEntry } from "./data.js";
 import { uid } from "./data.js";
 import { CommandDropdown, InputBar, LogArea, RunningStatus } from "./components.js";
 
+function LoadingIndicator(): React.ReactNode {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % 4), 250);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <Box paddingX={1}>
+      <Text color="#888">
+        {"●○○○●●○○○○●○●○".slice(frame * 3, frame * 3 + 3)}
+      </Text>
+    </Box>
+  );
+}
+
 type InputState = { value: string; cursor: number };
 
 type InputAction =
@@ -132,11 +147,16 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
 
   // ── React to external message prop (streaming updates) ──
   const prevMessage = useRef(message);
+  const throttleRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (message && message !== prevMessage.current) {
       prevMessage.current = message;
-      updateLastEntry(message);
+      clearTimeout(throttleRef.current);
+      throttleRef.current = setTimeout(() => {
+        updateLastEntry(message);
+      }, 16);
     }
+    return () => clearTimeout(throttleRef.current);
   }, [message, updateLastEntry]);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -283,6 +303,7 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
 
     // ── Ctrl+U — clear all, or delete current line if multiline ──
     if (key.ctrl && _char === "u") {
+      setHistoryIndex(-1);
       if (inputValue.includes("\n")) {
         const lineStart = inputValue.lastIndexOf("\n", cursorOffset - 1) + 1;
         const lineEnd = inputValue.indexOf("\n", cursorOffset);
@@ -353,7 +374,8 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
     // ── Backspace / Delete — deletes char before cursor ──
     if (key.backspace || key.delete) {
       dispatch({ type: "backspace" });
-      setSelectedIndex(0);
+      setHistoryIndex(-1);
+      if (showDropdown) setSelectedIndex(0);
       return;
     }
 
@@ -362,7 +384,8 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
       const cp = _char.charCodeAt(0);
       if (_char.length > 1 || cp >= 32) {
         dispatch({ type: "insert", text: _char });
-        setSelectedIndex(0);
+        setHistoryIndex(-1);
+        if (showDropdown) setSelectedIndex(0);
         return;
       }
     }
@@ -371,11 +394,7 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
   return (
     <Box flexDirection="column" height="100%">
       <LogArea entries={entries} />
-      {isLoading && !status && (
-        <Box paddingX={1}>
-          <Text color="#888">▎</Text>
-        </Box>
-      )}
+      {isLoading && !status && <LoadingIndicator />}
       <InputBar value={inputValue} cursorOffset={cursorOffset} />
       <RunningStatus status={status} />
       {showDropdown && (

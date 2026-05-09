@@ -9,6 +9,7 @@ interface MarkdownToken {
     | "text"
     | "bold"
     | "italic"
+    | "boldItalic"
     | "code"
     | "inlineCode"
     | "heading"
@@ -44,8 +45,7 @@ function parseInline(text: string): MarkdownToken[] {
     // bold+italic ***
     const biMatch = part.match(/^\*\*\*(.+?)\*\*\*$/);
     if (biMatch) {
-      tokens.push({ type: "bold", content: biMatch[1] });
-      tokens.push({ type: "italic", content: "" });
+      tokens.push({ type: "boldItalic", content: biMatch[1] });
       continue;
     }
 
@@ -66,8 +66,7 @@ function parseInline(text: string): MarkdownToken[] {
     // bold+italic ___
     const biMatch2 = part.match(/^___(.+?)___$/);
     if (biMatch2) {
-      tokens.push({ type: "bold", content: biMatch2[1] });
-      tokens.push({ type: "italic", content: "" });
+      tokens.push({ type: "boldItalic", content: biMatch2[1] });
       continue;
     }
 
@@ -215,6 +214,12 @@ function InlineRenderer({ tokens }: { tokens: MarkdownToken[] }): React.ReactNod
           case "bold":
             return (
               <Text key={i} bold color={C.primary}>
+                {token.content}
+              </Text>
+            );
+          case "boldItalic":
+            return (
+              <Text key={i} bold italic color={C.primary}>
                 {token.content}
               </Text>
             );

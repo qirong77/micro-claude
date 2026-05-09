@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Box, Text, useStdout } from "ink";
 import { C, type Command } from "./data.js";
 import { MemoizedMarkdownRenderer } from "./markdown.js";
@@ -94,24 +94,29 @@ export function InputBar({
   placeholder?: string;
 }): React.ReactNode {
   const { stdout } = useStdout();
-  const separator = "─".repeat(stdout.columns);
+  const separator = useMemo(
+    () => "─".repeat(stdout.columns),
+    [stdout.columns],
+  );
 
-  // split value into lines and locate which line the cursor is on
-  const lines = value ? value.split("\n") : [];
-  let cursorLine = 0;
-  let cursorCol = 0;
-  if (lines.length > 0) {
-    let acc = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const lineLen = lines[i].length;
-      if (acc + lineLen >= cursorOffset) {
-        cursorLine = i;
-        cursorCol = cursorOffset - acc;
-        break;
+  const { lines, cursorLine, cursorCol } = useMemo(() => {
+    const lines = value ? value.split("\n") : [];
+    let cursorLine = 0;
+    let cursorCol = 0;
+    if (lines.length > 0) {
+      let acc = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const lineLen = lines[i].length;
+        if (acc + lineLen >= cursorOffset) {
+          cursorLine = i;
+          cursorCol = cursorOffset - acc;
+          break;
+        }
+        acc += lineLen + 1;
       }
-      acc += lineLen + 1; // +1 for the newline char
     }
-  }
+    return { lines, cursorLine, cursorCol };
+  }, [value, cursorOffset]);
 
   return (
     <Box flexDirection="column">
@@ -153,11 +158,22 @@ export function InputBar({
 
 // ── Running Status ──────────────────────────────────────
 
-const STATUS_ICONS: Record<string, string> = {
-  "正在发送请求": "📡",
-  "正在调用工具": "🔧",
-  "正在思考": "->",
-};
+const STATUS_ICON_PATTERNS: Array<[RegExp, string]> = [
+  [/发送|请求/, "📡"],
+  [/调用|工具/, "🔧"],
+  [/思考/, "→"],
+  [/搜索|查找/, "🔍"],
+  [/读取|读/, "📖"],
+  [/写|编辑|修改/, "✏️"],
+  [/执行|运行/, "▶️"],
+];
+
+function getStatusIcon(status: string): string {
+  for (const [pattern, icon] of STATUS_ICON_PATTERNS) {
+    if (pattern.test(status)) return icon;
+  }
+  return "⚡";
+}
 
 let dotFrame = 0;
 
@@ -177,13 +193,13 @@ export const RunningStatus = React.memo(function RunningStatus({
     const interval = setInterval(() => {
       dotFrame = (dotFrame + 1) % 4;
       setDots(".".repeat(dotFrame));
-    }, 500);
+    }, 250);
     return () => clearInterval(interval);
   }, [status]);
 
   if (!status) return null;
 
-  const icon = STATUS_ICONS[status] || "⚡";
+  const icon = getStatusIcon(status);
   return (
     <Box paddingX={1} paddingY={0}>
       <Text>
