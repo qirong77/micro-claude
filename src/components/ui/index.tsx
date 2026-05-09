@@ -23,9 +23,22 @@ function Root() {
   const setUiStateRef = useRef(setUiState);
   setUiStateRef.current = setUiState;
 
-  // Subscribe to unified store changes
+  // Subscribe to unified store changes — with shallow comparison to reduce re-renders
   useEffect(() => {
+    let prev: ReturnType<typeof getState> | null = null;
     const unsub = subscribe((s) => {
+      // 浅比较：如果关键字段都没变，跳过更新
+      if (prev) {
+        const msgsSame = s.messages === prev.messages;
+        const loadingSame = s.isLoading === prev.isLoading;
+        const qcSame = s.quickCommands === prev.quickCommands;
+        const statusSame = s.status === prev.status;
+        const histSame = s.inputHistory === prev.inputHistory;
+        if (msgsSame && loadingSame && qcSame && statusSame && histSame) {
+          return;
+        }
+      }
+      prev = { ...s };
       setUiStateRef.current({
         messages: s.messages,
         isLoading: s.isLoading,

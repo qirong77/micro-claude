@@ -327,3 +327,6 @@ export function MarkdownRenderer({ text }: { text: string }): React.ReactNode {
     </Box>
   );
 }
+
+/** Memoized version — skips re-render when text hasn't changed */
+export const MemoizedMarkdownRenderer = React.memo(MarkdownRenderer);

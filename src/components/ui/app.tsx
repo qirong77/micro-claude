@@ -121,8 +121,11 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
         // No entries yet — add as first entry
         return [{ id: uid(), text }];
       }
+      const last = prev[prev.length - 1];
+      // 如果文本没变化，跳过更新避免不必要的渲染
+      if (last.text === text) return prev;
       const copy = [...prev];
-      copy[copy.length - 1] = { ...copy[copy.length - 1], text };
+      copy[prev.length - 1] = { ...last, text };
       return copy;
     });
   }, []);

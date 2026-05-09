@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text, useStdout } from "ink";
 import { C, type Command } from "./data.js";
-import { MarkdownRenderer } from "./markdown.js";
+import { MemoizedMarkdownRenderer } from "./markdown.js";
 
 // ── Log Area ────────────────────────────────────────────
 
@@ -10,7 +10,7 @@ function isUserMessage(text: string): boolean {
   return text.startsWith("> ");
 }
 
-export function LogArea({
+export const LogArea = React.memo(function LogArea({
   entries,
 }: {
   entries: Array<{ id: string; text: string }>;
@@ -23,8 +23,8 @@ export function LogArea({
           // User message — show with background highlight
           const content = e.text.slice(2); // remove "> " prefix
           return (
-            <Box key={e.id} paddingX={1} paddingY={0} flexDirection="column">
-              <Text bold underline color={C.dim}>
+            <Box key={e.id} paddingX={1} paddingY={1} flexDirection="column">
+              <Text color={C.success}>
                 {content}
               </Text>
             </Box>
@@ -34,13 +34,13 @@ export function LogArea({
         if (e.text.length === 0) return null;
         return (
           <Box key={e.id} paddingX={0}>
-            <MarkdownRenderer text={e.text} />
+            <MemoizedMarkdownRenderer text={e.text} />
           </Box>
         );
       })}
     </Box>
   );
-}
+});
 
 // ── Command Dropdown ────────────────────────────────────
 
@@ -161,7 +161,11 @@ const STATUS_ICONS: Record<string, string> = {
 
 let dotFrame = 0;
 
-export function RunningStatus({ status }: { status?: string }): React.ReactNode {
+export const RunningStatus = React.memo(function RunningStatus({
+  status,
+}: {
+  status?: string;
+}): React.ReactNode {
   const [dots, setDots] = React.useState("");
 
   React.useEffect(() => {
@@ -169,11 +173,11 @@ export function RunningStatus({ status }: { status?: string }): React.ReactNode 
       setDots("");
       return;
     }
-    // 动态动画帧
+    // 降低动画帧率到 500ms 减少重渲染
     const interval = setInterval(() => {
       dotFrame = (dotFrame + 1) % 4;
       setDots(".".repeat(dotFrame));
-    }, 250);
+    }, 500);
     return () => clearInterval(interval);
   }, [status]);
 
@@ -192,7 +196,7 @@ export function RunningStatus({ status }: { status?: string }): React.ReactNode 
       </Text>
     </Box>
   );
-}
+});
 
 // ── Status Bar ──────────────────────────────────────────
 
