@@ -1,8 +1,14 @@
 import React from "react";
 import { Box, Text, useStdout } from "ink";
 import { C, type Command } from "./data.js";
+import { MarkdownRenderer } from "./markdown.js";
 
 // ── Log Area ────────────────────────────────────────────
+
+/** Check if a log entry is a user message (starts with "> ") */
+function isUserMessage(text: string): boolean {
+  return text.startsWith("> ");
+}
 
 export function LogArea({
   entries,
@@ -11,10 +17,27 @@ export function LogArea({
 }): React.ReactNode {
   if (entries.length === 0) return null;
   return (
-    <Box flexDirection="column" flexGrow={1} paddingX={1}>
-      {entries.map((e) => (
-        <Text key={e.id}>{e.text}</Text>
-      ))}
+    <Box flexDirection="column" flexGrow={1}>
+      {entries.map((e) => {
+        if (isUserMessage(e.text)) {
+          // User message — show with background highlight
+          const content = e.text.slice(2); // remove "> " prefix
+          return (
+            <Box key={e.id} paddingX={1} paddingY={0} flexDirection="column">
+              <Text bold underline color={C.dim}>
+                {content}
+              </Text>
+            </Box>
+          );
+        }
+        // Assistant response — render as markdown
+        if (e.text.length === 0) return null;
+        return (
+          <Box key={e.id} paddingX={0}>
+            <MarkdownRenderer text={e.text} />
+          </Box>
+        );
+      })}
     </Box>
   );
 }
