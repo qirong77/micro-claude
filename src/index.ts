@@ -72,7 +72,6 @@ ui.onUserSubmit(async (text) => {
             ui.setState({ messages: [accumulatedText], isLoading: true });
         },
         onToolUse(name) {
-            accumulatedText += `\n\n🔧 调用工具: ${name}`;
             ui.setState({ messages: [accumulatedText], isLoading: true, status: `正在调用工具: ${name}` });
         },
         onToolResult() {
