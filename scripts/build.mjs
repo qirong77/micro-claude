@@ -10,6 +10,7 @@ await esbuild.build({
     outfile: "./dist/bin/index.js",
     packages: "external",
     external: ["react-devtools-core"],
+    loader: { ".md": "text" },
 });
 
 console.log("Build complete");
