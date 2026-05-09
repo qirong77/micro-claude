@@ -97,11 +97,16 @@ interface AppProps {
   quickCommands: Command[];
   onSubmit?: (text: string) => void;
   status?: string;
+  inputHistory: string[];
+  onHistoryUpdate?: (history: string[]) => void;
 }
 
-export function App({ message, isLoading, quickCommands, onSubmit, status }: AppProps): React.ReactNode {
+export function App({ message, isLoading, quickCommands, onSubmit, status, inputHistory, onHistoryUpdate }: AppProps): React.ReactNode {
   const [state, dispatch] = useReducer(inputReducer, initialState);
   const { value: inputValue, cursor: cursorOffset } = state;
+
+  // ── Input history ──
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   // ── Internal log entries ──
   const [entries, setEntries] = useState<LogEntry[]>([]);
@@ -170,30 +175,64 @@ export function App({ message, isLoading, quickCommands, onSubmit, status }: App
       }
     }
 
-    // ── Cursor navigation (when dropdown not focused) ──
+    // ── Cursor / history navigation (when dropdown not focused) ──
     if (!showDropdown || filteredCommands.length === 0) {
       if (key.upArrow) {
-        dispatch({
-          type: "move",
-          cursor: moveLine(
-            inputValue,
-            cursorOffset,
-            -1,
-            colOf(inputValue, cursorOffset),
-          ),
-        });
+        const curRow = rowOf(inputValue, cursorOffset);
+        // Multi-line editing: move cursor up if not on first line
+        if (inputValue.includes("\n") && curRow > 0) {
+          dispatch({
+            type: "move",
+            cursor: moveLine(
+              inputValue,
+              cursorOffset,
+              -1,
+              colOf(inputValue, cursorOffset),
+            ),
+          });
+        } else if (inputHistory.length > 0) {
+          // Browse history backward
+          const newIndex =
+            historyIndex === -1
+              ? inputHistory.length - 1
+              : Math.max(0, historyIndex - 1);
+          setHistoryIndex(newIndex);
+          const text = inputHistory[newIndex];
+          dispatch({ type: "clear" });
+          dispatch({ type: "insert", text });
+          dispatch({ type: "move", cursor: text.length });
+        }
         return;
       }
       if (key.downArrow) {
-        dispatch({
-          type: "move",
-          cursor: moveLine(
-            inputValue,
-            cursorOffset,
-            1,
-            colOf(inputValue, cursorOffset),
-          ),
-        });
+        const curRow = rowOf(inputValue, cursorOffset);
+        const lastRow = rowOf(inputValue, inputValue.length);
+        // Multi-line editing: move cursor down if not on last line
+        if (inputValue.includes("\n") && curRow < lastRow) {
+          dispatch({
+            type: "move",
+            cursor: moveLine(
+              inputValue,
+              cursorOffset,
+              1,
+              colOf(inputValue, cursorOffset),
+            ),
+          });
+        } else if (historyIndex !== -1) {
+          // Browse history forward
+          if (historyIndex < inputHistory.length - 1) {
+            const newIndex = historyIndex + 1;
+            setHistoryIndex(newIndex);
+            const text = inputHistory[newIndex];
+            dispatch({ type: "clear" });
+            dispatch({ type: "insert", text });
+            dispatch({ type: "move", cursor: text.length });
+          } else {
+            // At newest entry — clear input, exit history
+            setHistoryIndex(-1);
+            dispatch({ type: "clear" });
+          }
+        }
         return;
       }
     }
@@ -267,6 +306,10 @@ export function App({ message, isLoading, quickCommands, onSubmit, status }: App
         executeCommand(cmd.name);
         return;
       }
+
+      // Save to history before clearing
+      onHistoryUpdate?.([...inputHistory, text]);
+      setHistoryIndex(-1);
 
       dispatch({ type: "clear" });
 

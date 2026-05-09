@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ui } from "./components/ui/index.js";
 import { agentTurn } from "./components/agentTurn";
-import { store } from "./store";
+import { getState } from "./store";
 import type { Command } from "./components/ui/data.js";
 
 // ── Quick commands ──────────────────────────────────────
@@ -11,11 +11,10 @@ const QUICK_COMMANDS: Command[] = [
         name: "status",
         description: "查看当前配置状态",
         action: (addEntry) => {
-            const baseUrl = store.baseUrl;
-            const apiKey = store.apiKey ? "***" + store.apiKey.slice(-4) : "(未设置)";
+            const { baseUrl, apiKey, model } = getState();
             addEntry(`baseUrl: ${baseUrl}`);
-            addEntry(`apiKey:  ${apiKey}`);
-            addEntry(`model:   ${store.model}`);
+            addEntry(`apiKey:  ${apiKey ? "***" + apiKey.slice(-4) : "(未设置)"}`);
+            addEntry(`model:   ${model}`);
             addEntry(`cwd:     ${process.cwd()}`);
         },
     },

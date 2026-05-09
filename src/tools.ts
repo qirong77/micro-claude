@@ -147,10 +147,7 @@ function runShell(input: { command: string; timeout?: number }): string {
 }
 
 export async function executeTool(name: string, input: Record<string, any>): Promise<string> {
-    console.log(`执行工具: ${name}`);
-    Object.keys(input).forEach((key) => {
-        console.log(key, ": ", input[key]);
-    });
+
     try {
         switch (name) {
             case "read_file":

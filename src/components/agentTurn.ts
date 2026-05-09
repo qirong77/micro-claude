@@ -3,11 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { systemPrompt } from "../prompts/index";
 import { executeTool, toolDefinitions } from "../tools";
 import { tmpdir } from "node:os";
-import { store } from "../store";
+import { getState } from "../store";
 
-const ANTHROPIC_BASE_URL = store.baseUrl;
-const ANTHROPIC_API_KEY = store.apiKey;
-const MODEL = store.model;
+const { baseUrl: ANTHROPIC_BASE_URL, apiKey: ANTHROPIC_API_KEY, model: MODEL } = getState();
 
 if (!ANTHROPIC_API_KEY) {
     console.error("缺少环境变量 ANTHROPIC_API_KEY");

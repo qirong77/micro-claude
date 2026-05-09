@@ -2,46 +2,51 @@ import { render } from "ink";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { App } from "./app.js";
 import type { Command } from "./data.js";
+import { getState, setState as storeSetState, subscribe, loadHistory, saveHistory } from "../../store/index.js";
 
-
-interface IState {
-  messages: string[];
-  isLoading: boolean;
-  quickCommands: Command[];
-  status?: string;
-}
-
-// Ref-based setState so external code (like damo.ts) can update the TUI
-let _setState: React.Dispatch<React.SetStateAction<IState>> | null = null;
-let _getState: (() => IState) | null = null;
-
-// onSubmit callback — called when user submits free-form text (not a /command)
+// ── onSubmit callback — called when user submits free-form text (not a /command) ──
 let _onSubmit: ((text: string) => void) | null = null;
 
 function Root() {
-  const [state, _set] = useState<IState>({
-    messages: [],
-    isLoading: false,
-    quickCommands: [],
+  const [uiState, setUiState] = useState(() => {
+    const s = getState();
+    return {
+      messages: s.messages,
+      isLoading: s.isLoading,
+      quickCommands: s.quickCommands,
+      status: s.status,
+      inputHistory: s.inputHistory,
+    };
   });
 
-  // Store the setter in a global so ui.setState can use it.
-  // Must be set synchronously during render, not in useEffect,
-  // so that external code (e.g. damo.ts) can call ui.setState()
-  // immediately after ui.run().
-  _setState = _set;
+  // Keep a ref to the latest setter so the store listener can always use it
+  const setUiStateRef = useRef(setUiState);
+  setUiStateRef.current = setUiState;
+
+  // Subscribe to unified store changes
   useEffect(() => {
-    return () => {
-      _setState = null;
-    };
+    const unsub = subscribe((s) => {
+      setUiStateRef.current({
+        messages: s.messages,
+        isLoading: s.isLoading,
+        quickCommands: s.quickCommands,
+        status: s.status,
+        inputHistory: s.inputHistory,
+      });
+    });
+    return unsub;
   }, []);
 
-  const getState = useCallback(() => state, [state]);
+  // Load persisted history on mount
   useEffect(() => {
-    _getState = getState as unknown as (() => IState);
-  }, [getState]);
+    loadHistory().then((history) => {
+      if (history.length > 0) {
+        storeSetState({ inputHistory: history });
+      }
+    });
+  }, []);
 
-  const { messages, isLoading, quickCommands, status } = state;
+  const { messages, isLoading, quickCommands, status, inputHistory } = uiState;
 
   // Pass all messages to App so it can display conversation history
   const displayMessage = messages.length > 0 ? messages[messages.length - 1] : undefined;
@@ -51,12 +56,20 @@ function Root() {
     _onSubmit?.(text);
   }, []);
 
+  // Called by App when user submits — update store + persist
+  const handleHistoryUpdate = useCallback((history: string[]) => {
+    storeSetState({ inputHistory: history });
+    saveHistory(history).catch(() => {});
+  }, []);
+
   return (
     <App
       message={displayMessage}
       isLoading={isLoading}
       quickCommands={quickCommands}
       status={status}
+      inputHistory={inputHistory}
+      onHistoryUpdate={handleHistoryUpdate}
       onSubmit={handleSubmit}
     />
   );
@@ -66,14 +79,12 @@ function run() {
   render(<Root />);
 }
 
-function setState(update: Partial<IState>) {
-  if (_setState) {
-    _setState((prev) => ({ ...prev, ...update }));
-  }
+function setState(update: Partial<{ messages: string[]; isLoading: boolean; quickCommands: Command[]; status?: string }>) {
+  storeSetState(update);
 }
 
-function getState(): IState | undefined {
-  return _getState?.();
+function getUiState() {
+  return getState();
 }
 
 function onUserSubmit(cb: (text: string) => void) {
@@ -83,6 +94,6 @@ function onUserSubmit(cb: (text: string) => void) {
 export const ui = {
   run,
   setState,
-  getState,
+  getState: getUiState,
   onUserSubmit,
 };
