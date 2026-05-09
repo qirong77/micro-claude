@@ -1,9 +1,9 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ui } from "./ui/index.js";
+import { ui } from "./components/ui/index.js";
 import { agentTurn } from "./components/agentTurn";
 import { store } from "./store";
-import type { Command } from "./ui/data.js";
+import type { Command } from "./components/ui/data.js";
 
 // ── Quick commands ──────────────────────────────────────
 const QUICK_COMMANDS: Command[] = [
@@ -21,7 +21,7 @@ const QUICK_COMMANDS: Command[] = [
     },
     {
         name: "log",
-        description: "导出会话日志到文件",
+        description: "导出会话日志到当前路径",
         action: (addEntry, _updateLast) => {
             const msgs = agentTurn.messages;
             const fileName = "mica-session.json";
