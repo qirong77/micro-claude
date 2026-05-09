@@ -1,0 +1,87 @@
+[
+  {
+    "role": "user",
+    "content": "你好"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "你好！有什么可以帮你的吗？\n\n如需退出，请输入 `exit`。"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "content": "介绍这个项目"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "list_files_0",
+        "name": "list_files",
+        "input": {
+          "pattern": "**/*"
+        }
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "type": "tool_result",
+        "tool_use_id": "list_files_0",
+        "content": "tsconfig.json\npackage.json\npackage-lock.json\nREADME.md\nscripts/build.mjs\ndist/test.cjs\ntest/tool.test.ts\ntemp/Anthropic.ts\nsrc/index.ts\nsrc/tools.ts\nsrc/env.d.ts\nsrc/agent.ts\ntemp/claude/log.ts\ntemp/claude/system.md\ntemp/claude/readme.md\ntemp/claude/log.json\ndist/bin/index.cjs\ndist/bin/index.js\nsrc/store/index.ts\nsrc/components/agentTurn.ts\nsrc/prompts/index.ts\nsrc/prompts/system.md\nsrc/components/ui/damo.ts\nsrc/components/ui/components.tsx\nsrc/components/ui/app.tsx\nsrc/components/ui/data.ts\nsrc/components/ui/index.tsx"
+      }
+    ]
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "read_file_1",
+        "name": "read_file",
+        "input": {
+          "file_path": "/Users/qironglin/Desktop/micro-claude/README.md"
+        }
+      },
+      {
+        "type": "tool_use",
+        "id": "read_file_2",
+        "name": "read_file",
+        "input": {
+          "file_path": "/Users/qironglin/Desktop/micro-claude/package.json"
+        }
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "type": "tool_result",
+        "tool_use_id": "read_file_1",
+        "content": "   1 | # Micro Claude\n   2 | \n   3 | 一个轻量级的 Claude Code CLI 工具，提供交互式编程辅助。\n   4 | \n   5 | ## 功能特性\n   6 | \n   7 | - 交互式 CLI 对话\n   8 | - 内置工具：读取、写入、编辑文件，搜索文件，运行 Shell 命令\n   9 | - 斜杠命令支持 (`/help`, `/greet`, `/log`)\n  10 | - 插件系统\n  11 | - 支持自定义 API 端点和模型\n  12 | \n  13 | ## 安装\n  14 | \n  15 | ```bash\n  16 | # 克隆项目\n  17 | git clone https://github.com/yourusername/micro-claude.git\n  18 | cd micro-claude\n  19 | \n  20 | # 安装依赖\n  21 | npm install\n  22 | \n  23 | # 构建\n  24 | npm run build\n  25 | \n  26 | # 全局安装（可选）\n  27 | npm install -g .\n  28 | ```\n  29 | \n  30 | ## 使用方法\n  31 | \n  32 | ```bash\n  33 | # 运行\n  34 | npm run dev\n  35 | \n  36 | # 或使用构建后的版本\n  37 | mica\n  38 | ```\n  39 | \n  40 | ### 环境变量\n  41 | \n  42 | | 变量 | 说明 | 默认值 |\n  43 | |------|------|--------|\n  44 | | `ANTHROPIC_API_KEY` | API 密钥 | (必填) |\n  45 | | `ANTHROPIC_BASE_URL` | API 端点 | `https://api.deepseek.com/anthropic` |\n  46 | | `ANTHROPIC_MODEL` | 使用模型 | `claude-sonnet-4-6` |\n  47 | \n  48 | ## 可用工具\n  49 | \n  50 | - `read_file` - 读取文件内容\n  51 | - `write_file` - 写入文件\n  52 | - `edit_file` - 编辑文件（字符串替换）\n  53 | - `list_files` - 按 glob 模式列出文件\n  54 | - `grep_search` - 正则搜索\n  55 | - `run_shell` - 执行 Shell 命令\n  56 | \n  57 | ## 斜杠命令\n  58 | \n  59 | - `/help` - 显示帮助\n  60 | - `/greet` - 打招呼\n  61 | - `/log [文件名]` - 导出当前会话\n  62 | \n  63 | ## 许可证\n  64 | \n  65 | MIT"
+      },
+      {
+        "type": "tool_result",
+        "tool_use_id": "read_file_2",
+        "content": "   1 | {\n   2 |     \"name\": \"micro-claude\",\n   3 |     \"private\": true,\n   4 |     \"type\": \"module\",\n   5 |     \"scripts\": {\n   6 |         \"dev\": \"bun run src/index.ts\",\n   7 |         \"build\": \"node scripts/build.mjs\",\n   8 |         \"postbuild\": \"npm i -g\",\n   9 |         \"test\": \"vitest run\"\n  10 |     },\n  11 |     \"dependencies\": {\n  12 |         \"@anthropic-ai/sdk\": \"^0.95.0\",\n  13 |         \"@types/node\": \"^25.6.2\",\n  14 |         \"dotenv\": \"^17.4.2\",\n  15 |         \"esbuild\": \"^0.28.0\",\n  16 |         \"glob\": \"^13.0.6\",\n  17 |         \"ink\": \"^4.4.1\",\n  18 |         \"react\": \"^18.3.1\"\n  19 |     },\n  20 |     \"bin\": {\n  21 |         \"mica\": \"dist/bin/index.js\"\n  22 |     },\n  23 |     \"devDependencies\": {\n  24 |         \"@types/react\": \"^18.3.28\",\n  25 |         \"tsx\": \"^4.21.0\",\n  26 |         \"typescript\": \"^6.0.3\",\n  27 |         \"vitest\": \"^3.2.4\"\n  28 |     }\n  29 | }\n  30 | "
+      }
+    ]
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "**Micro Claude** 是一个轻量级的 CLI 编程辅助工具，类似 Claude Code 的精简版。\n\n## 核心功能\n\n- **交互式对话**：基于 Anthropic SDK 与 LLM 交互\n- **内置工具集**：文件读写、编辑、搜索、Shell 命令执行\n- **斜杠命令**：`/help`、`/greet`、`/log`\n- **TUI 界面**：基于 Ink + React 的终端 UI\n- **可配置 API**：支持自定义端点、模型和 API Key\n\n## 技术栈\n\n| 依赖 | 用途 |\n|------|------|\n| `@anthropic-ai/sdk` | Anthropic API 客户端 |\n| `ink` + `react` | 终端交互式 UI |\n| `esbuild` | 构建打包 |\n| `vitest` | 测试框架 |\n| `glob` | 文件匹配 |\n\n## 项目结构\n\n```\nsrc/\n├── index.ts          # 入口\n├── agent.ts          # Agent 核心逻辑\n├── tools.ts          # 工具函数定义\n├── store/index.ts    # 状态存储\n├── prompts/          # 系统提示词\n└── components/       # UI 组件（Ink/React）\n```\n\n## 运行方式\n\n```bash\nnpm run dev      # 开发模式（bun）\nnpm run build    # 构建并全局安装\nmica             # 使用构建后的 CLI\n```\n\n默认调用 DeepSeek 的 Anthropic 兼容端点，模型为 `claude-sonnet-4-6`。"
+      }
+    ]
+  }
+]

@@ -29,8 +29,9 @@ async function main() {
     conversation.push({ role: "user", content: text });
     // Signal loading
     ui.setState({
-      messages: ["🤔 Thinking..."],
+      messages: ["Thinking..."],
       isLoading: true,
+      status: "正在发送请求",
     });
     const mockResponse = 'this is a mock response to "' + text + '"';
     let count = 0;

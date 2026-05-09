@@ -128,6 +128,34 @@ export function InputBar({
   );
 }
 
+// ── Running Status ──────────────────────────────────────
+
+const STATUS_ICONS: Record<string, string> = {
+  "正在发送请求": "📡",
+  "正在调用工具": "🔧",
+  "等待工具结果": "⏳",
+  "正在思考": "🤔",
+  "处理完成": "✅",
+};
+
+export function RunningStatus({ status }: { status?: string }): React.ReactNode {
+  if (!status) return null;
+
+  const icon = STATUS_ICONS[status] || "⚡";
+  return (
+    <Box paddingX={1} paddingY={0}>
+      <Text>
+        <Text color={C.cyan}>{icon}</Text>
+        <Text color={C.cyan}> </Text>
+        <Text italic color={C.cyan}>
+          {status}
+        </Text>
+        <Text color={C.cyan}>...</Text>
+      </Text>
+    </Box>
+  );
+}
+
 // ── Status Bar ──────────────────────────────────────────
 
 export function StatusBar({

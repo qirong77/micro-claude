@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } 
 import { Box, Text, useInput } from "ink";
 import type { Command, LogEntry } from "./data.js";
 import { uid } from "./data.js";
-import { CommandDropdown, InputBar, LogArea } from "./components.js";
+import { CommandDropdown, InputBar, LogArea, RunningStatus } from "./components.js";
 
 type InputState = { value: string; cursor: number };
 
@@ -96,9 +96,10 @@ interface AppProps {
   isLoading?: boolean;
   quickCommands: Command[];
   onSubmit?: (text: string) => void;
+  status?: string;
 }
 
-export function App({ message, isLoading, quickCommands, onSubmit }: AppProps): React.ReactNode {
+export function App({ message, isLoading, quickCommands, onSubmit, status }: AppProps): React.ReactNode {
   const [state, dispatch] = useReducer(inputReducer, initialState);
   const { value: inputValue, cursor: cursorOffset } = state;
 
@@ -318,6 +319,7 @@ export function App({ message, isLoading, quickCommands, onSubmit }: AppProps): 
         </Box>
       )}
       <InputBar value={inputValue} cursorOffset={cursorOffset} />
+      <RunningStatus status={status} />
       {showDropdown && (
         <CommandDropdown
           commands={filteredCommands}

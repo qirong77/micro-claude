@@ -62,24 +62,25 @@ let accumulatedText = "";
 // ── Register onSubmit handler ───────────────────────────
 ui.onUserSubmit(async (text) => {
     accumulatedText = "";
-    ui.setState({ isLoading: true });
+    ui.setState({ isLoading: true, status: "正在发送请求" });
 
     await agentTurn.run(text, {
         onText(chunk) {
             accumulatedText += chunk;
-            ui.setState({ messages: [accumulatedText], isLoading: false });
+            ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
         },
-        onToolUse(name, input) {
+        onToolUse(name, _input) {
             accumulatedText += `\n\n🔧 调用工具: ${name}`;
-            ui.setState({ messages: [accumulatedText], isLoading: false });
+            Object.keys(_input).forEach((key) => {
+                accumulatedText += `\n  ${key}: ${JSON.stringify(_input[key])}`;
+            });
+            ui.setState({ messages: [accumulatedText], isLoading: false, status: `正在调用工具: ${name}` });
         },
         onToolResult(_name, result) {
-            const preview = result.length > 200 ? result.slice(0, 200) + "\n...(截断)" : result;
-            accumulatedText += `\n📋 结果:\n${preview}`;
-            ui.setState({ messages: [accumulatedText], isLoading: false });
+            ui.setState({ messages: [accumulatedText], isLoading: false, status: "等待工具结果" });
         },
         onFinish() {
-            ui.setState({ isLoading: false });
+            ui.setState({ isLoading: false, status: undefined });
         },
     });
 });

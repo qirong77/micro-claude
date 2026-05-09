@@ -8,6 +8,7 @@ interface IState {
   messages: string[];
   isLoading: boolean;
   quickCommands: Command[];
+  status?: string;
 }
 
 // Ref-based setState so external code (like damo.ts) can update the TUI
@@ -40,7 +41,7 @@ function Root() {
     _getState = getState as unknown as (() => IState);
   }, [getState]);
 
-  const { messages, isLoading, quickCommands } = state;
+  const { messages, isLoading, quickCommands, status } = state;
 
   // Pass all messages to App so it can display conversation history
   const displayMessage = messages.length > 0 ? messages[messages.length - 1] : undefined;
@@ -55,6 +56,7 @@ function Root() {
       message={displayMessage}
       isLoading={isLoading}
       quickCommands={quickCommands}
+      status={status}
       onSubmit={handleSubmit}
     />
   );
