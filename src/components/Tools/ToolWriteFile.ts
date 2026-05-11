@@ -2,6 +2,7 @@ import { writeFileSync, existsSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import { MicaTool } from "./MicaTool";
 
+
 export class ToolWriteFile extends MicaTool {
     constructor() {
         super(

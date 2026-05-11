@@ -1,6 +1,7 @@
 
 import { MicaAgent } from "./agent.js";
 import { autoCompactPlugin } from "./plugins/auto-compact-plugin";
+import { quickCommandLogPlugin } from "./plugins/quick-command/quick-command-log-plugin.js";
 
 MicaAgent.ui.run();
 MicaAgent.ui.setState({
@@ -10,4 +11,5 @@ MicaAgent.ui.setState({
 });
 
 MicaAgent.usePlugin(autoCompactPlugin);
+MicaAgent.usePlugin(quickCommandLogPlugin);
 

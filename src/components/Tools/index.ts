@@ -38,4 +38,3 @@ export async function executeTool(name: string, input: Record<string, any>): Pro
     }
 }
 
-export { MicaTool };

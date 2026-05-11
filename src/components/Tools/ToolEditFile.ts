@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from "fs";
 import { MicaTool } from "./MicaTool";
 
+
 export class ToolEditFile extends MicaTool {
     constructor() {
         super(
