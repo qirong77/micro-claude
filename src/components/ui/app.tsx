@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Box, Text, useInput } from "ink";
-import type { Command, LogEntry } from "./data.js";
+import type { Command, LogEntry, InputContext, InputState, InputAction } from "./data.js";
 import { uid } from "./data.js";
 import { CommandDropdown, InputBar, LogArea, RunningStatus } from "./components.js";
+import { getInputHandlers } from "./index.js";
 
 function LoadingIndicator(): React.ReactNode {
   const [frame, setFrame] = useState(0);
@@ -18,15 +19,6 @@ function LoadingIndicator(): React.ReactNode {
     </Box>
   );
 }
-
-type InputState = { value: string; cursor: number };
-
-type InputAction =
-  | { type: "insert"; text: string }
-  | { type: "backspace" }
-  | { type: "delete" }
-  | { type: "clear" }
-  | { type: "move"; cursor: number };
 
 function inputReducer(state: InputState, action: InputAction): InputState {
   switch (action.type) {
@@ -112,16 +104,11 @@ interface AppProps {
   quickCommands: Command[];
   onSubmit?: (text: string) => void;
   status?: string;
-  inputHistory: string[];
-  onHistoryUpdate?: (history: string[]) => void;
 }
 
-export function App({ message, isLoading, quickCommands, onSubmit, status, inputHistory, onHistoryUpdate }: AppProps): React.ReactNode {
+export function App({ message, isLoading, quickCommands, onSubmit, status }: AppProps): React.ReactNode {
   const [state, dispatch] = useReducer(inputReducer, initialState);
   const { value: inputValue, cursor: cursorOffset } = state;
-
-  // ── Input history ──
-  const [historyIndex, setHistoryIndex] = useState(-1);
 
   // ── Internal log entries ──
   const [entries, setEntries] = useState<LogEntry[]>([]);
@@ -186,6 +173,21 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
   );
 
   useInput((_char, key) => {
+    // ── Build context for plugin handlers ──
+    const ctx: InputContext = {
+      inputValue,
+      cursorOffset,
+      showDropdown,
+      dispatch,
+    };
+
+    // ── Phase 1: run registered plugin input handlers ──
+    for (const handler of getInputHandlers()) {
+      if (handler(_char, key, ctx)) return;
+    }
+
+    // ── Phase 2: core input handling ────────────────────
+
     // ── Dropdown navigation ──
     if (showDropdown && filteredCommands.length > 0) {
       if (key.upArrow) {
@@ -198,11 +200,10 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
       }
     }
 
-    // ── Cursor / history navigation (when dropdown not focused) ──
+    // ── Multi-line cursor movement (when dropdown not focused) ──
     if (!showDropdown || filteredCommands.length === 0) {
       if (key.upArrow) {
         const curRow = rowOf(inputValue, cursorOffset);
-        // Multi-line editing: move cursor up if not on first line
         if (inputValue.includes("\n") && curRow > 0) {
           dispatch({
             type: "move",
@@ -213,24 +214,14 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
               colOf(inputValue, cursorOffset),
             ),
           });
-        } else if (inputHistory.length > 0) {
-          // Browse history backward
-          const newIndex =
-            historyIndex === -1
-              ? inputHistory.length - 1
-              : Math.max(0, historyIndex - 1);
-          setHistoryIndex(newIndex);
-          const text = inputHistory[newIndex];
-          dispatch({ type: "clear" });
-          dispatch({ type: "insert", text });
-          dispatch({ type: "move", cursor: text.length });
+          return;
         }
+        // If plugin didn't handle, let it pass through (no-op)
         return;
       }
       if (key.downArrow) {
         const curRow = rowOf(inputValue, cursorOffset);
         const lastRow = rowOf(inputValue, inputValue.length);
-        // Multi-line editing: move cursor down if not on last line
         if (inputValue.includes("\n") && curRow < lastRow) {
           dispatch({
             type: "move",
@@ -241,21 +232,9 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
               colOf(inputValue, cursorOffset),
             ),
           });
-        } else if (historyIndex !== -1) {
-          // Browse history forward
-          if (historyIndex < inputHistory.length - 1) {
-            const newIndex = historyIndex + 1;
-            setHistoryIndex(newIndex);
-            const text = inputHistory[newIndex];
-            dispatch({ type: "clear" });
-            dispatch({ type: "insert", text });
-            dispatch({ type: "move", cursor: text.length });
-          } else {
-            // At newest entry — clear input, exit history
-            setHistoryIndex(-1);
-            dispatch({ type: "clear" });
-          }
+          return;
         }
+        // If plugin didn't handle, let it pass through (no-op)
         return;
       }
     }
@@ -303,7 +282,6 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
 
     // ── Ctrl+U — clear all, or delete current line if multiline ──
     if (key.ctrl && _char === "u") {
-      setHistoryIndex(-1);
       if (inputValue.includes("\n")) {
         const lineStart = inputValue.lastIndexOf("\n", cursorOffset - 1) + 1;
         const lineEnd = inputValue.indexOf("\n", cursorOffset);
@@ -346,10 +324,6 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
         return;
       }
 
-      // Save to history before clearing
-      onHistoryUpdate?.([...inputHistory, text]);
-      setHistoryIndex(-1);
-
       dispatch({ type: "clear" });
 
       // If input starts with /, treat as a command
@@ -374,7 +348,6 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
     // ── Backspace / Delete — deletes char before cursor ──
     if (key.backspace || key.delete) {
       dispatch({ type: "backspace" });
-      setHistoryIndex(-1);
       if (showDropdown) setSelectedIndex(0);
       return;
     }
@@ -384,7 +357,6 @@ export function App({ message, isLoading, quickCommands, onSubmit, status, input
       const cp = _char.charCodeAt(0);
       if (_char.length > 1 || cp >= 32) {
         dispatch({ type: "insert", text: _char });
-        setHistoryIndex(-1);
         if (showDropdown) setSelectedIndex(0);
         return;
       }

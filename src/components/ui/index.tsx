@@ -1,11 +1,28 @@
 import { render } from "ink";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { App } from "./app.js";
-import type { Command } from "./data.js";
-import { getState, setState as storeSetState, subscribe, loadHistory, saveHistory } from "../../store/index.js";
+import type { Command, InputHandler } from "./data.js";
+import { getState, setState as storeSetState, subscribe } from "../../store/index.js";
 
 // ── onSubmit callback — called when user submits free-form text (not a /command) ──
 let _onSubmit: ((text: string) => void) | null = null;
+
+// ── Input handler plugin registry ──────────────────────
+const _inputHandlers: InputHandler[] = [];
+
+/** Register an input handler. Returns an unsubscribe function. */
+export function addInputHandler(handler: InputHandler): () => void {
+  _inputHandlers.push(handler);
+  return () => {
+    const idx = _inputHandlers.indexOf(handler);
+    if (idx >= 0) _inputHandlers.splice(idx, 1);
+  };
+}
+
+/** Get all registered input handlers (called by App) */
+export function getInputHandlers(): InputHandler[] {
+  return _inputHandlers;
+}
 
 function Root() {
   const [uiState, setUiState] = useState(() => {
@@ -15,7 +32,6 @@ function Root() {
       isLoading: s.isLoading,
       quickCommands: s.quickCommands,
       status: s.status,
-      inputHistory: s.inputHistory,
     };
   });
 
@@ -33,8 +49,7 @@ function Root() {
         const loadingSame = s.isLoading === prev.isLoading;
         const qcSame = s.quickCommands === prev.quickCommands;
         const statusSame = s.status === prev.status;
-        const histSame = s.inputHistory === prev.inputHistory;
-        if (msgsSame && loadingSame && qcSame && statusSame && histSame) {
+        if (msgsSame && loadingSame && qcSame && statusSame) {
           return;
         }
       }
@@ -44,22 +59,12 @@ function Root() {
         isLoading: s.isLoading,
         quickCommands: s.quickCommands,
         status: s.status,
-        inputHistory: s.inputHistory,
       });
     });
     return unsub;
   }, []);
 
-  // Load persisted history on mount
-  useEffect(() => {
-    loadHistory().then((history) => {
-      if (history.length > 0) {
-        storeSetState({ inputHistory: history });
-      }
-    });
-  }, []);
-
-  const { messages, isLoading, quickCommands, status, inputHistory } = uiState;
+  const { messages, isLoading, quickCommands, status } = uiState;
 
   // Pass all messages to App so it can display conversation history
   const displayMessage = messages.length > 0 ? messages[messages.length - 1] : undefined;
@@ -69,20 +74,12 @@ function Root() {
     _onSubmit?.(text);
   }, []);
 
-  // Called by App when user submits — update store + persist
-  const handleHistoryUpdate = useCallback((history: string[]) => {
-    storeSetState({ inputHistory: history });
-    saveHistory(history).catch(() => {});
-  }, []);
-
   return (
     <App
       message={displayMessage}
       isLoading={isLoading}
       quickCommands={quickCommands}
       status={status}
-      inputHistory={inputHistory}
-      onHistoryUpdate={handleHistoryUpdate}
       onSubmit={handleSubmit}
     />
   );
@@ -109,4 +106,6 @@ export const ui = {
   setState,
   getState: getUiState,
   onUserSubmit,
+  addInputHandler,
+  getInputHandlers,
 };

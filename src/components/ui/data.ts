@@ -1,3 +1,6 @@
+import type { Key } from "ink";
+import type React from "react";
+
 // ── Theme ───────────────────────────────────────────────
 
 export const C = {
@@ -32,3 +35,31 @@ let _id = 0;
 export function uid(): string {
   return `entry-${++_id}`;
 }
+
+// ── Input reducer types (shared with plugins) ──────────
+
+export type InputState = { value: string; cursor: number };
+export type InputAction =
+  | { type: "insert"; text: string }
+  | { type: "backspace" }
+  | { type: "delete" }
+  | { type: "clear" }
+  | { type: "move"; cursor: number };
+
+// ── Extensible input handler plugin system ─────────────
+
+/** Context passed to each registered input handler */
+export interface InputContext {
+  inputValue: string;
+  cursorOffset: number;
+  showDropdown: boolean;
+  dispatch: React.Dispatch<InputAction>;
+}
+
+/** An input handler receives the raw key event + context.
+ *  Return `true` if the event was consumed (stop propagation). */
+export type InputHandler = (
+  char: string,
+  key: Key,
+  ctx: InputContext,
+) => boolean;

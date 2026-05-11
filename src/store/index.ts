@@ -23,6 +23,7 @@ export interface AppState {
   status?: string;
   // Input history
   inputHistory: string[];
+  historyIndex: number;
 }
 
 let _state: AppState = {
@@ -34,6 +35,7 @@ let _state: AppState = {
   quickCommands: [],
   status: undefined,
   inputHistory: [],
+  historyIndex: -1,
 };
 
 type Listener = (state: AppState) => void;
