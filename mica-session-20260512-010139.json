@@ -1,0 +1,28 @@
+[
+  {
+    "role": "user",
+    "content": "你好"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "你好！有什么我可以帮你的吗？"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "content": "你是什么模型"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "我是 **Micro Claude Code**，一个轻量级的编程辅助工具（CLI），基于 Claude 模型构建。\n\n我的主要能力是帮助你进行代码编辑、文件操作、搜索和 shell 命令执行等编程相关任务。有什么需要帮忙的吗？"
+      }
+    ]
+  }
+]

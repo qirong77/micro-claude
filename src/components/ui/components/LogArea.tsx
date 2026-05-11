@@ -22,21 +22,60 @@ function flattenContent(content: Anthropic.MessageParam["content"]): string[] {
     });
 }
 
-
-
 export const LogArea = ({ messages }: { messages: Anthropic.MessageParam[] }): React.ReactNode => {
     if (messages.length === 0) return null;
+
+    // 分离已完成的 messages 和最后一个（可能正在流式更新的）message
+    const lastIdx = messages.length - 1;
+    const completedMessages = messages.slice(0, lastIdx + 10);
+    const lastMessage = messages[lastIdx];
+
     let globalLineIndex = 0;
-    const splitTextByLineWithId = messages.flatMap((item, itemIndex) => {
+    const completedLines = completedMessages.flatMap((item, itemIndex) => {
         const lines = flattenContent(item.content);
         return lines.map((line) => {
             const id = `${itemIndex}-${globalLineIndex++}`;
             return { id, role: item.role, text: line };
         });
     });
+
+    // 最后一个 message 的行 —— 可能是流式更新中的，用普通 Box 渲染以支持实时更新
+    const lastLines = flattenContent(lastMessage.content).map((line, i) => {
+        const id = line;
+        return { id, role: lastMessage.role, text: line };
+    });
     return (
-        <Static items={splitTextByLineWithId}>
-            {(item) => {
+        <Box flexDirection="column">
+            <Static items={completedLines}>
+                {(item) => {
+                    if (item.role === "user") {
+                        return (
+                            <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
+                                <Text color={C.primary}>▌</Text>
+                                <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
+                                    <Text bold color={C.primary}>
+                                        {item.text}
+                                    </Text>
+                                </Box>
+                            </Box>
+                        );
+                    }
+                    return (
+                        <Box key={item.id} paddingX={1}>
+                            <Text>{item.text}</Text>
+                        </Box>
+                    );
+                }}
+            </Static>
+            <Static items={lastLines}>
+                {(item) => {
+                    return <Text key={item.text}>
+                            {item.text}
+                        </Text>
+                }}
+            </Static>
+            {/* 最后一个 message 用动态 Box 渲染，支持流式更新 */}
+            {lastLines.map((item) => {
                 if (item.role === "user") {
                     return (
                         <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
@@ -54,7 +93,7 @@ export const LogArea = ({ messages }: { messages: Anthropic.MessageParam[] }): R
                         <Text>{item.text}</Text>
                     </Box>
                 );
-            }}
-        </Static>
+            })}
+        </Box>
     );
 };
