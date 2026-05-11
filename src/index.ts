@@ -1,9 +1,10 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ui } from "./components/ui/index.js";
 import { agentTurn } from "./components/agentTurn";
 import { getState } from "./store";
 import type { Command } from "./components/ui/data.js";
+import { MicaAgent } from "./agent.js";
+import { autoCompactPlugin } from "./plugins/auto-compact-plugin";
 
 // ── Quick commands ──────────────────────────────────────
 const QUICK_COMMANDS: Command[] = [
@@ -48,27 +49,27 @@ const QUICK_COMMANDS: Command[] = [
 ];
 
 // ── Start the TUI ───────────────────────────────────────
-ui.run();
-ui.setState({
+MicaAgent.ui.run();
+MicaAgent.ui.setState({
     messages: [],
     isLoading: false,
     quickCommands: QUICK_COMMANDS,
 });
-
+MicaAgent.usePlugin(autoCompactPlugin);
 // ── Conversation state ──────────────────────────────────
 let accumulatedText = "";
 let lastFlush = 0;
 const FLUSH_INTERVAL = 50; // 最多每 50ms 刷新一次 UI，减少闪烁
 
 // ── Register onSubmit handler ───────────────────────────
-ui.onUserSubmit(async (text) => {
+MicaAgent.ui.onUserSubmit(async (text) => {
     accumulatedText = "";
     lastFlush = 0;
-    ui.setState({ isLoading: true, status: "正在发送请求" });
+    MicaAgent.ui.setState({ isLoading: true, status: "正在发送请求" });
 
     await agentTurn.run(text, {
         onThinking() {
-            ui.setState({ isLoading: true, status: "正在思考" });
+            MicaAgent.ui.setState({ isLoading: true, status: "正在思考" });
         },
         onText(chunk) {
             accumulatedText += chunk;
@@ -76,19 +77,19 @@ ui.onUserSubmit(async (text) => {
             const now = Date.now();
             if (now - lastFlush >= FLUSH_INTERVAL) {
                 lastFlush = now;
-                ui.setState({ messages: [accumulatedText], isLoading: true });
+                MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true });
             }
         },
         onToolUse(name) {
             // 工具调用前先 flush 当前累积文本
-            ui.setState({ messages: [accumulatedText], isLoading: true, status: `正在调用工具: ${name}` });
+            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, status: `正在调用工具: ${name}` });
         },
         onToolResult() {
-            ui.setState({ isLoading: true, status: "正在思考" });
+            MicaAgent.ui.setState({ isLoading: true, status: "正在思考" });
         },
         onFinish() {
             // 最终 flush 确保完整文本显示
-            ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
+            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
         },
     });
 });
