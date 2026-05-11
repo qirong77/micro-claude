@@ -18,18 +18,19 @@ ui.onUserSubmit(async (text) => {
             }
         },
         onToolUse(name, input) {
-            const toolDisplayText = getToolDisplayText(name, input);
+            const toolDisplayText = getToolDisplayText(name, input);  
             // 工具调用前先 flush 当前累积文本
-            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, status: `🔧 ${toolDisplayText}` });
+            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, status: `${toolDisplayText}` });
         },
         onToolResult() {},
         onFinish() {
             // 最终 flush 确保完整文本显示
             MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
+
         },
         onFinishOneIteration(hasText) {
             if (hasText) {
-                accumulatedText += "\n"; // 每轮结束后添加换行分隔
+                accumulatedText += "\n\n"; // 每轮结束后添加换行分隔
             }
         },
     });
