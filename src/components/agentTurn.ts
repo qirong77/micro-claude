@@ -51,17 +51,11 @@ class AgentTurn {
                 hasText = true;
             });
 
-            // 监听原始流事件以检测工具调用的起止
-            stream.on("streamEvent", (event) => {
-                if (event.type === "content_block_start" && event.content_block.type === "tool_use") {
-                    hasToolUse = true;
-                    callbacks?.onToolUse?.(event.content_block.name, {});
-                }
-            });
-
-            // contentBlock 在块完成时触发，此时 tool_use 的 input 已完整
+            // contentBlock 在 content_block_stop 时触发，此时 tool_use 的 input 已完整
             stream.on("contentBlock", (content) => {
                 if (content.type === "tool_use") {
+                    hasToolUse = true;
+                    callbacks?.onToolUse?.(content.name, content.input as Record<string, any>);
                     completedToolUses.push({
                         id: content.id,
                         name: content.name,

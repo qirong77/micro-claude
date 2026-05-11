@@ -35,7 +35,7 @@ export const LogArea = React.memo(function LogArea({
         // Assistant response
         if (e.text.length === 0) return null;
         return (
-          <Box key={e.id} paddingX={1}  paddingY={1}>
+          <Box key={e.id} paddingX={1} >
             <Text>{e.text}</Text>
           </Box>
         );
@@ -184,7 +184,7 @@ export const RunningStatus = React.memo(function RunningStatus({
   if (!status) return null;
 
   return (
-    <Box paddingX={1} paddingY={0}>
+    <Box paddingX={1} paddingY={1}>
       <Text>
         <Text color={C.dim}> * </Text>
         <Text color={C.dim}>

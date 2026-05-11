@@ -17,8 +17,8 @@ ui.onUserSubmit(async (text) => {
                 MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
             }
         },
-        onToolUse(name) {
-            const toolDisplayText = getToolDisplayText(name, {});
+        onToolUse(name, input) {
+            const toolDisplayText = getToolDisplayText(name, input);
             // 工具调用前先 flush 当前累积文本
             MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, status: `🔧 ${toolDisplayText}` });
         },
