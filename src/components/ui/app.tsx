@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } 
 import { Box, Text, useInput } from "ink";
 import type { Command, LogEntry, InputContext, InputState, InputAction } from "./data.js";
 import { uid } from "./data.js";
-import { CommandDropdown, InputBar, LogArea, RunningStatus } from "./components.js";
+
 import { getInputHandlers } from "./index.js";
+import { LogArea } from "./components/LogArea.js";
 
 function inputReducer(state: InputState, action: InputAction): InputState {
     switch (action.type) {
@@ -324,11 +325,11 @@ export function App({ message, isLoading, quickCommands, onSubmit, statuses }: A
     return (
         <Box flexDirection="column" height="100%">
             <LogArea entries={entries} />
-            <RunningStatus statuses={statuses} />
-            <InputBar value={inputValue} cursorOffset={cursorOffset} />
+            {/* <RunningStatus statuses={statuses} /> */}
+            {/* <InputBar value={inputValue} cursorOffset={cursorOffset} /> */}
 
-            {showDropdown && <CommandDropdown commands={filteredCommands} selectedIndex={selectedIndex} filter={filterText} />}
-            <Box paddingBottom={1} />
+            {/* {showDropdown && <CommandDropdown commands={filteredCommands} selectedIndex={selectedIndex} filter={filterText} />} */}
+            {/* <Box paddingBottom={1} /> */}
         </Box>
     );
 }
