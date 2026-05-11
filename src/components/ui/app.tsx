@@ -76,10 +76,10 @@ interface AppProps {
     isLoading?: boolean;
     quickCommands: Command[];
     onSubmit?: (text: string) => void;
-    status?: string;
+    statuses?: Array<{ id: string; text: string }>;
 }
 
-export function App({ message, isLoading, quickCommands, onSubmit, status }: AppProps): React.ReactNode {
+export function App({ message, isLoading, quickCommands, onSubmit, statuses }: AppProps): React.ReactNode {
     const [state, dispatch] = useReducer(inputReducer, initialState);
     const { value: inputValue, cursor: cursorOffset } = state;
 
@@ -324,7 +324,7 @@ export function App({ message, isLoading, quickCommands, onSubmit, status }: App
     return (
         <Box flexDirection="column" height="100%">
             <LogArea entries={entries} />
-            <RunningStatus status={status} />
+            <RunningStatus statuses={statuses} />
             <InputBar value={inputValue} cursorOffset={cursorOffset} />
 
             {showDropdown && <CommandDropdown commands={filteredCommands} selectedIndex={selectedIndex} filter={filterText} />}

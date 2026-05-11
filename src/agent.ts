@@ -7,6 +7,8 @@ const FLUSH_INTERVAL = 16;
 ui.onUserSubmit(async (text) => {
     accumulatedText = "";
     lastFlush = 0;
+    // 维护活跃的工具调用状态列表
+    let activeToolStatuses: Array<{ id: string; text: string }> = [];
     await agentTurn.run(text, {
         onText(chunk) {
             accumulatedText += chunk;
@@ -14,18 +16,24 @@ ui.onUserSubmit(async (text) => {
             const now = Date.now();
             if (now - lastFlush >= FLUSH_INTERVAL) {
                 lastFlush = now;
-                MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
+                MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: false, statuses: activeToolStatuses });
             }
         },
-        onToolUse(name, input) {
-            const toolDisplayText = getToolDisplayText(name, input);  
-            // 工具调用前先 flush 当前累积文本
-            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, status: `${toolDisplayText}` });
+        onToolUse(id, name, input) {
+            const toolDisplayText = getToolDisplayText(name, input);
+            // 添加新的工具状态
+            activeToolStatuses = [...activeToolStatuses, { id, text: toolDisplayText }];
+            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, statuses: activeToolStatuses });
         },
-        onToolResult() {},
+        onToolResult(id) {
+            // 工具执行完毕，移除对应状态
+            activeToolStatuses = activeToolStatuses.filter((s) => s.id !== id);
+            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: activeToolStatuses.length > 0, statuses: activeToolStatuses });
+        },
         onFinish() {
             // 最终 flush 确保完整文本显示
-            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: false, status: undefined });
+            activeToolStatuses = [];
+            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: false, statuses: [] });
 
         },
         onFinishOneIteration(hasText) {

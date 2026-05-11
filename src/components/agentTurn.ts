@@ -18,8 +18,8 @@ const client = new Anthropic({
 
 export interface AgentTurnCallbacks {
     onText?: (text: string) => void;
-    onToolUse?: (name: string, input: Record<string, any>) => void;
-    onToolResult?: (name: string, result: string) => void;
+    onToolUse?: (id: string, name: string, input: Record<string, any>) => void;
+    onToolResult?: (id: string, name: string, result: string) => void;
     onFinish?: () => void;
     onFinishOneIteration?: (hasText: boolean) => void;
 }
@@ -55,7 +55,7 @@ class AgentTurn {
             stream.on("contentBlock", (content) => {
                 if (content.type === "tool_use") {
                     hasToolUse = true;
-                    callbacks?.onToolUse?.(content.name, content.input as Record<string, any>);
+                    callbacks?.onToolUse?.(content.id, content.name, content.input as Record<string, any>);
                     completedToolUses.push({
                         id: content.id,
                         name: content.name,
@@ -79,7 +79,7 @@ class AgentTurn {
                         const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
                         result = `工具 ${tool.name} 执行异常：\n${message}`;
                     }
-                    callbacks?.onToolResult?.(tool.name, result);
+                    callbacks?.onToolResult?.(tool.id, tool.name, result);
                     toolResults.push({
                         type: "tool_result",
                         tool_use_id: tool.id,

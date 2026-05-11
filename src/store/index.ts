@@ -20,7 +20,7 @@ export interface AppState {
   messages: string[];
   isLoading: boolean;
   quickCommands: Command[];
-  status?: string;
+  statuses: Array<{ id: string; text: string }>;
   // Input history
   inputHistory: string[];
   historyIndex: number;
@@ -33,7 +33,7 @@ let _state: AppState = {
   messages: [],
   isLoading: false,
   quickCommands: [],
-  status: undefined,
+  statuses: [],
   inputHistory: [],
   historyIndex: -1,
 };

@@ -162,36 +162,38 @@ export function InputBar({
 
 
 export const RunningStatus = React.memo(function RunningStatus({
-  status,
+  statuses,
 }: {
-  status?: string;
+  statuses?: Array<{ id: string; text: string }>;
 }): React.ReactNode {
-  const [dots, setDots] = React.useState("");
-  const dotFrame = React.useRef(0);
+  const [dotFrame, setDotFrame] = React.useState(0);
   React.useEffect(() => {
-    if (!status) {
-      setDots("");
+    if (!statuses || statuses.length === 0) {
       return;
     }
-    // 降低动画帧率到 500ms 减少重渲染
     const interval = setInterval(() => {
-      dotFrame.current = (dotFrame.current + 1) % 4;
-      setDots(".".repeat(dotFrame.current));
+      setDotFrame((f) => (f + 1) % 4);
     }, 250);
     return () => clearInterval(interval);
-  }, [status]);
+  }, [statuses && statuses.length > 0]);
 
-  if (!status) return null;
+  if (!statuses || statuses.length === 0) return null;
+
+  const dots = ".".repeat(dotFrame);
 
   return (
-    <Box paddingX={1} paddingY={1}>
-      <Text>
-        <Text color={C.dim}> * </Text>
-        <Text color={C.dim}>
-          {status}
-        </Text>
-        <Text color={C.dim}>{dots}</Text>
-      </Text>
+    <Box flexDirection="column" paddingX={1} paddingY={1}>
+      {statuses.map((s) => (
+        <Box key={s.id}>
+          <Text>
+            <Text color={C.dim}> * </Text>
+            <Text color={C.dim}>
+              {s.text}
+            </Text>
+            <Text color={C.dim}>{dots}</Text>
+          </Text>
+        </Box>
+      ))}
     </Box>
   );
 });

@@ -31,7 +31,7 @@ function Root() {
       messages: s.messages,
       isLoading: s.isLoading,
       quickCommands: s.quickCommands,
-      status: s.status,
+      statuses: s.statuses,
     };
   });
 
@@ -48,8 +48,8 @@ function Root() {
         const msgsSame = s.messages === prev.messages;
         const loadingSame = s.isLoading === prev.isLoading;
         const qcSame = s.quickCommands === prev.quickCommands;
-        const statusSame = s.status === prev.status;
-        if (msgsSame && loadingSame && qcSame && statusSame) {
+        const statusesSame = s.statuses === prev.statuses;
+        if (msgsSame && loadingSame && qcSame && statusesSame) {
           return;
         }
       }
@@ -58,13 +58,13 @@ function Root() {
         messages: s.messages,
         isLoading: s.isLoading,
         quickCommands: s.quickCommands,
-        status: s.status,
+        statuses: s.statuses,
       });
     });
     return unsub;
   }, []);
 
-  const { messages, isLoading, quickCommands, status } = uiState;
+  const { messages, isLoading, quickCommands, statuses } = uiState;
 
   // Pass all messages to App so it can display conversation history
   const displayMessage = messages.length > 0 ? messages[messages.length - 1] : undefined;
@@ -79,7 +79,7 @@ function Root() {
       message={displayMessage}
       isLoading={isLoading}
       quickCommands={quickCommands}
-      status={status}
+      statuses={statuses}
       onSubmit={handleSubmit}
     />
   );
@@ -89,7 +89,7 @@ function run() {
   render(<Root />);
 }
 
-function setState(update: Partial<{ messages: string[]; isLoading: boolean; quickCommands: Command[]; status?: string }>) {
+function setState(update: Partial<{ messages: string[]; isLoading: boolean; quickCommands: Command[]; statuses: Array<{ id: string; text: string }> }>) {
   storeSetState(update);
 }
 
