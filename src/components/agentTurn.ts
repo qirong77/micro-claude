@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import Anthropic from "@anthropic-ai/sdk";
 import { systemPrompt } from "../prompts/index";
-import { executeTool, toolDefinitions } from "./Tools/index";
+import { executeTool, toolDefinitions } from "./tools/index";
 import { getState } from "../store";
 
 const { baseUrl: ANTHROPIC_BASE_URL, apiKey: ANTHROPIC_API_KEY, model: MODEL } = getState();
