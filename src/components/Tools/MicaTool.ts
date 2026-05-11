@@ -10,4 +10,5 @@ export abstract class MicaTool {
     }
 
     abstract execute(input: Record<string, any>): Promise<string>;
+    abstract onToolUseDisplayText(input: Record<string, any>): string;
 }

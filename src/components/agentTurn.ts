@@ -21,6 +21,7 @@ export interface AgentTurnCallbacks {
     onToolUse?: (name: string, input: Record<string, any>) => void;
     onToolResult?: (name: string, result: string) => void;
     onFinish?: () => void;
+    onFinishOneIteration?: (hasText: boolean) => void;
 }
 
 class AgentTurn {
@@ -41,11 +42,13 @@ class AgentTurn {
             });
 
             let hasToolUse = false;
+            let hasText = false
             const completedToolUses: Array<{ id: string; name: string; input: Record<string, any> }> = [];
 
             // 流式文本输出（逐 token）
             stream.on("text", (text) => {
                 callbacks?.onText?.(text);
+                hasText = true;
             });
 
             // 监听原始流事件以检测工具调用的起止
@@ -70,7 +73,7 @@ class AgentTurn {
             // 等待流结束，获取完整消息
             const finalMessage = await stream.finalMessage();
             messages.push({ role: "assistant", content: finalMessage.content });
-
+            callbacks?.onFinishOneIteration?.(hasText);
             // 执行工具并收集结果
             if (completedToolUses.length > 0) {
                 const toolResults: Anthropic.ToolResultBlockParam[] = [];

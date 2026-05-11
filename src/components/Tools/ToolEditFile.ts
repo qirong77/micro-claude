@@ -26,4 +26,7 @@ export class ToolEditFile extends MicaTool {
         writeFileSync(input.file_path, newContent);
         return `编辑成功: ${input.file_path}`;
     }
+    onToolUseDisplayText(input: Record<string, any>): string {
+        return `edit_file: ${input.file_path}`;
+    }
 }

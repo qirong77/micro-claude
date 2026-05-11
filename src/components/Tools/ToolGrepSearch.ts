@@ -41,4 +41,8 @@ export class ToolGrepSearch extends MicaTool {
             throw new Error(`grep_search 执行失败：\n${details}`);
         }
     }
+    onToolUseDisplayText(input: Record<string, any>): string {
+        return `grep_search: pattern="${input.pattern}" in ${input.path || "current directory"}`;
+    }
 }
+

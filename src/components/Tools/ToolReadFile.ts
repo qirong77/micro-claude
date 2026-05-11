@@ -23,4 +23,7 @@ export class ToolReadFile extends MicaTool {
             .map((line, i) => `${String(i + 1).padStart(4)} | ${line}`)
             .join("\n");
     }
+    onToolUseDisplayText(input: Record<string, any>): string {
+        return `read_file: ${input.file_path}`;
+    }
 }

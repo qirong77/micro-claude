@@ -37,4 +37,14 @@ export async function executeTool(name: string, input: Record<string, any>): Pro
         return `工具 ${name} 执行失败：\n${truncated}`;
     }
 }
+export function getToolDisplayText(name: string, input: Record<string, any>): string {
+    const tool = tools.find((t) => t.name === name);
+    if (!tool) return `未知工具: ${name}`;
+    try {
+        return tool.onToolUseDisplayText(input);
+    } catch (error) {
+        const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+        return `工具 ${name} onToolUseDisplayText 执行失败：\n${message}`;
+    }
+}
 

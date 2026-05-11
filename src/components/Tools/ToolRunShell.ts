@@ -26,4 +26,7 @@ export class ToolRunShell extends MicaTool {
         });
         return result || "(no output)";
     }
+    onToolUseDisplayText(input: Record<string, any>): string {
+        return `run_shell: ${input.command}`;
+    }
 }

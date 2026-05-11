@@ -25,4 +25,7 @@ export class ToolWriteFile extends MicaTool {
         writeFileSync(input.file_path, input.content);
         return `写入成功: ${input.file_path}`;
     }
+    onToolUseDisplayText(input: Record<string, any>): string {
+        return `write_file: ${input.file_path}`;
+    }
 }
