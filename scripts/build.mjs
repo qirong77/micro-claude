@@ -13,4 +13,6 @@ await esbuild.build({
     loader: { ".md": "text" },
 });
 
+import { chmodSync } from "node:fs";
+chmodSync("./dist/bin/index.js", 0o755);
 console.log("Build complete");

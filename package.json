@@ -11,7 +11,7 @@
     "dependencies": {
         "@anthropic-ai/sdk": "^0.95.0",
         "@types/node": "^25.6.2",
-        "dotenv": "^17.4.2",
+        "dotenv": "^16.6.1",
         "esbuild": "^0.28.0",
         "glob": "^13.0.6",
         "ink": "^4.4.1",

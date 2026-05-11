@@ -5,7 +5,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import type { Command } from "../components/ui/data.js";
 
 // 显式加载 .env，并覆盖已有同名环境变量，确保以项目配置为准
-dotenv.config({ override: true });
+dotenv.config({ override: true, });
 
 export const cacheDir = resolve(homedir(), ".mica");
 
