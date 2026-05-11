@@ -35,7 +35,7 @@ export const LogArea = React.memo(function LogArea({
         // Assistant response
         if (e.text.length === 0) return null;
         return (
-          <Box key={e.id} paddingX={1}>
+          <Box key={e.id} paddingX={1}  paddingY={1}>
             <Text>{e.text}</Text>
           </Box>
         );
