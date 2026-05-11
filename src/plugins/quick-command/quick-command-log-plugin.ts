@@ -17,11 +17,18 @@ export function quickCommandLogPlugin(agent: IMicaAgent) {
       {
         name: "export-session",
         description: "导出会话记录到当前路径",
-        action: async (addEntry: (text: string) => void) => {
+        action: async () => {
           const messages = agent.agentTurn.messages;
 
           if (messages.length === 0) {
-            addEntry("⚠️ 当前没有会话记录可导出");
+            // 通过 setState 追加一条消息来显示提示
+            const currentState = agent.ui.getState();
+            agent.ui.setState({
+              messages: [
+                ...currentState.messages,
+                { role: "user" as const, content: "⚠️ 当前没有会话记录可导出" },
+              ],
+            });
             return;
           }
 
@@ -46,13 +53,23 @@ export function quickCommandLogPlugin(agent: IMicaAgent) {
               JSON.stringify(messages, null, 2),
               "utf-8",
             );
-            addEntry(
-              `✅ 会话记录已导出: ${filePath}（共 ${messages.length} 条消息）`,
-            );
+            const currentState = agent.ui.getState();
+            agent.ui.setState({
+              messages: [
+                ...currentState.messages,
+                { role: "user" as const, content: `✅ 会话记录已导出: ${filePath}（共 ${messages.length} 条消息）` },
+              ],
+            });
           } catch (error) {
             const errMsg =
               error instanceof Error ? error.message : String(error);
-            addEntry(`❌ 导出失败: ${errMsg}`);
+            const currentState = agent.ui.getState();
+            agent.ui.setState({
+              messages: [
+                ...currentState.messages,
+                { role: "user" as const, content: `❌ 导出失败: ${errMsg}` },
+              ],
+            });
           }
         },
       },

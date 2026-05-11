@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import type Anthropic from "@anthropic-ai/sdk";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -16,8 +17,8 @@ export interface AppState {
   baseUrl: string;
   apiKey: string;
   model: string;
-  // UI
-  messages: string[];
+  // UI — messages now use Anthropic.MessageParam[] for native conversation history
+  messages: Anthropic.MessageParam[];
   isLoading: boolean;
   quickCommands: Command[];
   statuses: Array<{ id: string; text: string }>;

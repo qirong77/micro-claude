@@ -1,10 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Box, Text, useInput } from "ink";
-import type { Command, LogEntry, InputContext, InputState, InputAction } from "./data.js";
-import { uid } from "./data.js";
+import React, { useCallback, useMemo, useReducer, useState } from "react";
+import { Box, useInput } from "ink";
+import type Anthropic from "@anthropic-ai/sdk";
+import type { Command, InputContext, InputState, InputAction } from "./data.js";
 
 import { getInputHandlers } from "./index.js";
 import { LogArea } from "./components/LogArea.js";
+import { RunningStatus } from "./components/RunningStatus.js";
+import { CommandDropdown } from "./components/CommandDropdown.js";
+import { InputBar } from "./components/InputBar.js";
 
 function inputReducer(state: InputState, action: InputAction): InputState {
     switch (action.type) {
@@ -73,52 +76,16 @@ function moveLine(text: string, offset: number, dir: 1 | -1, preferredCol: numbe
 const initialState: InputState = { value: "", cursor: 0 };
 
 interface AppProps {
-    message?: string;
+    messages: Anthropic.MessageParam[];
     isLoading?: boolean;
     quickCommands: Command[];
     onSubmit?: (text: string) => void;
     statuses?: Array<{ id: string; text: string }>;
 }
 
-export function App({ message, isLoading, quickCommands, onSubmit, statuses }: AppProps): React.ReactNode {
+export function App({ messages, isLoading, quickCommands, onSubmit, statuses }: AppProps): React.ReactNode {
     const [state, dispatch] = useReducer(inputReducer, initialState);
     const { value: inputValue, cursor: cursorOffset } = state;
-
-    // ── Internal log entries ──
-    const [entries, setEntries] = useState<LogEntry[]>([]);
-
-    const addEntry = useCallback((text: string) => {
-        setEntries((prev) => [...prev, { id: uid(), text }]);
-    }, []);
-
-    const updateLastEntry = useCallback((text: string) => {
-        setEntries((prev) => {
-            if (prev.length === 0) {
-                // No entries yet — add as first entry
-                return [{ id: uid(), text }];
-            }
-            const last = prev[prev.length - 1];
-            // 如果文本没变化，跳过更新避免不必要的渲染
-            if (last.text === text) return prev;
-            const copy = [...prev];
-            copy[prev.length - 1] = { ...last, text };
-            return copy;
-        });
-    }, []);
-
-    // ── React to external message prop (streaming updates) ──
-    const prevMessage = useRef(message);
-    const throttleRef = useRef<ReturnType<typeof setTimeout>>();
-    useEffect(() => {
-        if (message && message !== prevMessage.current) {
-            prevMessage.current = message;
-            clearTimeout(throttleRef.current);
-            throttleRef.current = setTimeout(() => {
-                updateLastEntry(message);
-            }, 16);
-        }
-        return () => clearTimeout(throttleRef.current);
-    }, [message, updateLastEntry]);
 
     const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -133,14 +100,9 @@ export function App({ message, isLoading, quickCommands, onSubmit, statuses }: A
     const executeCommand = useCallback(
         (name: string) => {
             const cmd = quickCommands.find((c) => c.name === name);
-            if (cmd) {
-                addEntry(`> /${cmd.name}`);
-                cmd.action(addEntry, updateLastEntry);
-            } else {
-                addEntry(`> ${name}  —  unknown command`);
-            }
+            cmd?.action();
         },
-        [quickCommands, addEntry, updateLastEntry],
+        [quickCommands],
     );
 
     useInput((_char, key) => {
@@ -291,9 +253,7 @@ export function App({ message, isLoading, quickCommands, onSubmit, statuses }: A
                 return;
             }
 
-            // Free-form text — show user message, add placeholder for streaming, call onSubmit
-            addEntry(`> ${text}`);
-            addEntry(""); // placeholder for agent response streaming
+            // Free-form text — call onSubmit (the consumer manages messages via setState)
             onSubmit?.(text);
             return;
         }
@@ -324,12 +284,12 @@ export function App({ message, isLoading, quickCommands, onSubmit, statuses }: A
 
     return (
         <Box flexDirection="column" height="100%">
-            <LogArea entries={entries} />
-            {/* <RunningStatus statuses={statuses} /> */}
-            {/* <InputBar value={inputValue} cursorOffset={cursorOffset} /> */}
-
-            {/* {showDropdown && <CommandDropdown commands={filteredCommands} selectedIndex={selectedIndex} filter={filterText} />} */}
-            {/* <Box paddingBottom={1} /> */}
+                    
+            <Box paddingBottom={1} />
+            <LogArea messages={messages} />
+             <RunningStatus statuses={statuses} />
+            <InputBar value={inputValue} cursorOffset={cursorOffset} />
+            {showDropdown && <CommandDropdown commands={filteredCommands} selectedIndex={selectedIndex} filter={filterText} />}
         </Box>
     );
 }

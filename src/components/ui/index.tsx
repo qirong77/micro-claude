@@ -1,5 +1,6 @@
 import { render } from "ink";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import type Anthropic from "@anthropic-ai/sdk";
 import { App } from "./app.js";
 import type { Command, InputHandler } from "./data.js";
 import { getState, setState as storeSetState, subscribe } from "../../store/index.js";
@@ -66,9 +67,6 @@ function Root() {
 
   const { messages, isLoading, quickCommands, statuses } = uiState;
 
-  // Pass all messages to App so it can display conversation history
-  const displayMessage = messages.length > 0 ? messages[messages.length - 1] : undefined;
-
   // Call the external onSubmit when user submits text
   const handleSubmit = useCallback((text: string) => {
     _onSubmit?.(text);
@@ -76,7 +74,7 @@ function Root() {
 
   return (
     <App
-      message={displayMessage}
+      messages={messages}
       isLoading={isLoading}
       quickCommands={quickCommands}
       statuses={statuses}
@@ -89,7 +87,7 @@ function run() {
   render(<Root />);
 }
 
-function setState(update: Partial<{ messages: string[]; isLoading: boolean; quickCommands: Command[]; statuses: Array<{ id: string; text: string }> }>) {
+function setState(update: Partial<{ messages: Anthropic.MessageParam[]; isLoading: boolean; quickCommands: Command[]; statuses: Array<{ id: string; text: string }> }>) {
   storeSetState(update);
 }
 

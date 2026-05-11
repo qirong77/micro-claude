@@ -82,10 +82,15 @@ print(fibonacci(10))
 async function main() {
     // Start the Ink UI
     ui.run();
-    let index=  0
+    let index = 0;
     setTimeout(() => {
         setInterval(() => {
-            ui.setState({ messages: [markdown.slice(0, index)] });
+            const content = markdown.slice(0, index);
+            ui.setState({
+                messages: content
+                    ? [{ role: "assistant" as const, content }]
+                    : [],
+            });
             index += 100;
         }, 100);
     }, 1000);

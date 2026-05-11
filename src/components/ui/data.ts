@@ -15,25 +15,12 @@ export const C = {
   magenta: "#AB47BC",
 } as const;
 
-// ── Editor API ──────────────────────────────────────────
-
-export interface Editor {
-  addEntry: (text: string) => void;
-  updateLastEntry: (text: string) => void;
-}
-
 // ── Quick commands ──────────────────────────────────────
 
 export interface Command {
   name: string;
   description: string;
-  action: (addEntry: (text: string) => void, updateLastEntry: (text: string) => void) => void;
-}
-
-export type LogEntry = { id: string; text: string };
-let _id = 0;
-export function uid(): string {
-  return `entry-${++_id}`;
+  action: () => void;
 }
 
 // ── Input reducer types (shared with plugins) ──────────
