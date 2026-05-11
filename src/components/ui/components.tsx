@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { Box, Text, useStdout } from "ink";
 import { C, type Command } from "./data.js";
-import { MemoizedMarkdownRenderer } from "./markdown.js";
 
 // ── Log Area ────────────────────────────────────────────
 
@@ -30,11 +29,11 @@ export const LogArea = React.memo(function LogArea({
             </Box>
           );
         }
-        // Assistant response — render as markdown
+        // Assistant response
         if (e.text.length === 0) return null;
         return (
-          <Box key={e.id} paddingX={0}>
-            <MemoizedMarkdownRenderer text={e.text} />
+          <Box key={e.id} paddingX={1}>
+            <Text>{e.text}</Text>
           </Box>
         );
       })}
