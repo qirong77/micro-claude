@@ -21,7 +21,6 @@ export interface AgentTurnCallbacks {
     onToolUse?: (name: string, input: Record<string, any>) => void;
     onToolResult?: (name: string, result: string) => void;
     onFinish?: () => void;
-    onThinking?: () => void;
 }
 
 class AgentTurn {
@@ -32,9 +31,6 @@ class AgentTurn {
         messages.push({ role: "user", content: userInput });
 
         while (true) {
-            // 通知 UI：正在等待模型响应
-            callbacks?.onThinking?.();
-
             // 使用流式 API
             const stream = client.messages.stream({
                 model: MODEL,

@@ -9,9 +9,6 @@ ui.onUserSubmit(async (text) => {
     MicaAgent.ui.setState({ isLoading: true, status: "正在发送请求" });
 
     await agentTurn.run(text, {
-        onThinking() {
-            MicaAgent.ui.setState({ isLoading: true, status: "正在思考" });
-        },
         onText(chunk) {
             accumulatedText += chunk;
             // 节流：最多每 FLUSH_INTERVAL ms 更新一次 UI

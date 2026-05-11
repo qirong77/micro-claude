@@ -29,8 +29,6 @@ export const LogArea = React.memo(function LogArea({
                   {content}
                 </Text>
               </Box>
-
-
             </Box>
           );
         }
@@ -51,7 +49,6 @@ export const LogArea = React.memo(function LogArea({
 export function CommandDropdown({
   commands,
   selectedIndex,
-  filter,
 }: {
   commands: Command[];
   selectedIndex: number;
@@ -160,26 +157,9 @@ export function InputBar({
   );
 }
 
-// ── Running Status ──────────────────────────────────────
 
-const STATUS_ICON_PATTERNS: Array<[RegExp, string]> = [
-  [/发送|请求/, "📡"],
-  [/调用|工具/, "🔧"],
-  [/思考/, "→"],
-  [/搜索|查找/, "🔍"],
-  [/读取|读/, "📖"],
-  [/写|编辑|修改/, "✏️"],
-  [/执行|运行/, "▶️"],
-];
 
-function getStatusIcon(status: string): string {
-  for (const [pattern, icon] of STATUS_ICON_PATTERNS) {
-    if (pattern.test(status)) return icon;
-  }
-  return "⚡";
-}
 
-let dotFrame = 0;
 
 export const RunningStatus = React.memo(function RunningStatus({
   status,
@@ -187,7 +167,7 @@ export const RunningStatus = React.memo(function RunningStatus({
   status?: string;
 }): React.ReactNode {
   const [dots, setDots] = React.useState("");
-
+  const dotFrame = React.useRef(0);
   React.useEffect(() => {
     if (!status) {
       setDots("");
@@ -195,53 +175,23 @@ export const RunningStatus = React.memo(function RunningStatus({
     }
     // 降低动画帧率到 500ms 减少重渲染
     const interval = setInterval(() => {
-      dotFrame = (dotFrame + 1) % 4;
-      setDots(".".repeat(dotFrame));
+      dotFrame.current = (dotFrame.current + 1) % 4;
+      setDots(".".repeat(dotFrame.current));
     }, 250);
     return () => clearInterval(interval);
   }, [status]);
 
   if (!status) return null;
 
-  const icon = getStatusIcon(status);
   return (
     <Box paddingX={1} paddingY={0}>
       <Text>
-        <Text color={C.cyan}>{icon}</Text>
-        <Text color={C.cyan}> </Text>
-        <Text italic color={C.cyan}>
+        <Text color={C.dim}> * </Text>
+        <Text color={C.dim}>
           {status}
         </Text>
-        <Text color={C.cyan}>{dots}</Text>
+        <Text color={C.dim}>{dots}</Text>
       </Text>
     </Box>
   );
 });
-
-// ── Status Bar ──────────────────────────────────────────
-
-export function StatusBar({
-  commands,
-  selectedIndex,
-}: {
-  commands: Command[];
-  selectedIndex: number;
-}): React.ReactNode {
-  if (commands.length > 0) {
-    const cmd = commands[selectedIndex];
-    return (
-      <Box>
-        <Text dimColor>
-          ↑↓ navigate · Enter select · /{cmd.name} — {cmd.description}
-        </Text>
-      </Box>
-    );
-  }
-  return (
-    <Box>
-      <Text dimColor>
-        type / + command · ⏎ submit · \⏎ / ⇧⏎ newline · ⌃A/E jump · ⌃U clear
-      </Text>
-    </Box>
-  );
-}
