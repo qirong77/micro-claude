@@ -95,7 +95,6 @@ const StreamingExample = () => {
     return (
         <>
         
-            <Static items={[{ id: DEFAULT_CHUNKS_TEXT, text: DEFAULT_CHUNKS_TEXT }]}>{(chunk) => <Text key={chunk.id}>{chunk.text}</Text>}</Static>
             {/* Static: each chunk is rendered once and never touched again */}
             <Static items={chunks}>{(chunk) => <Text key={chunk.id}>{chunk.text}</Text>}</Static>
 
