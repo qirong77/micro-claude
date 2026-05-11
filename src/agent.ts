@@ -6,8 +6,6 @@ const FLUSH_INTERVAL = 16;
 ui.onUserSubmit(async (text) => {
     accumulatedText = "";
     lastFlush = 0;
-    MicaAgent.ui.setState({ isLoading: true, status: "正在发送请求" });
-
     await agentTurn.run(text, {
         onText(chunk) {
             accumulatedText += chunk;
@@ -20,10 +18,10 @@ ui.onUserSubmit(async (text) => {
         },
         onToolUse(name) {
             // 工具调用前先 flush 当前累积文本
-            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, status: `正在调用工具: ${name}` });
+            MicaAgent.ui.setState({ messages: [accumulatedText], isLoading: true, status: `调用工具: ${name}` });
         },
         onToolResult() {
-            MicaAgent.ui.setState({ isLoading: true, status: "正在思考" });
+            return
         },
         onFinish() {
             // 最终 flush 确保完整文本显示

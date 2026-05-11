@@ -23,9 +23,9 @@ export const LogArea = React.memo(function LogArea({
           const content = e.text.slice(2); // remove "> " prefix
           return (
             <Box key={e.id} paddingX={1} paddingY={1} flexDirection="row">
-              <Text color={C.secondary}>▌</Text>
+              <Text color={C.primary}>▌</Text>
               <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
-                <Text bold color={C.secondary}>
+                <Text bold color={C.primary}>
                   {content}
                 </Text>
               </Box>
