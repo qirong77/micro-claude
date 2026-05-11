@@ -87,7 +87,7 @@ async function main() {
         setInterval(() => {
             ui.setState({ messages: [markdown.slice(0, index)] });
             index += 100;
-        }, 100);
+        }, 1000);
     }, 1000);
 }
 
