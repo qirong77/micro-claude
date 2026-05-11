@@ -19,13 +19,18 @@ export const LogArea = React.memo(function LogArea({
     <Box flexDirection="column" flexGrow={1}>
       {entries.map((e) => {
         if (isUserMessage(e.text)) {
-          // User message — show with background highlight
+          // User message — show with background highlight + left indicator
           const content = e.text.slice(2); // remove "> " prefix
           return (
-            <Box key={e.id} paddingX={1} paddingY={1} flexDirection="column">
-              <Text color={C.success}>
-                {content}
-              </Text>
+            <Box key={e.id} paddingX={1} paddingY={1} flexDirection="row">
+              <Text color={C.secondary}>▌</Text>
+              <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
+                <Text bold color={C.secondary}>
+                  {content}
+                </Text>
+              </Box>
+
+
             </Box>
           );
         }
