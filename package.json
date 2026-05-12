@@ -1,25 +1,33 @@
 {
-    "name": "micro-claude",
-    "private": true,
-    "scripts": {
-        "dev": "bun run src/index.ts",
-        "build": "esbuild ./src/index.ts --bundle --platform=node --target=node18 --banner:js='#!/usr/bin/env node' --outfile=./dist/bin/index.cjs",
-        "postbuild": "npm i -g",
-        "test": "vitest run"
-    },
-    "dependencies": {
-        "@anthropic-ai/sdk": "^0.95.0",
-        "@types/node": "^25.6.2",
-        "dotenv": "^17.4.2",
-        "esbuild": "^0.28.0",
-        "glob": "^13.0.6"
-    },
-    "bin": {
-        "mica": "dist/bin/index.cjs"
-    },
-    "devDependencies": {
-        "tsx": "^4.21.0",
-        "typescript": "^6.0.3",
-        "vitest": "^3.2.4"
-    }
+  "name": "micro-claude",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "node scripts/build.mjs",
+    "postbuild": "npm i -g",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.0",
+    "@types/node": "^25.6.2",
+    "dotenv": "^16.6.1",
+    "esbuild": "^0.28.0",
+    "glob": "^13.0.6",
+    "ink": "^4.4.1",
+    "marked": "^18.0.3",
+    "react": "^18.3.1"
+  },
+  "bin": {
+    "mica": "dist/bin/index.js"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.28",
+    "prettier": "^3.5.3",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
+  }
 }

@@ -1,11 +1,9 @@
-import { readFileSync } from "node:fs";
-
-const template = readFileSync("src/prompts/system.md", "utf-8");
+import template from './system.md';
 
 const systemPrompt = template
-  .replace("{{cwd}}", process.cwd())
-  .replace("{{date}}", new Date().toLocaleDateString())
-  .replace("{{platform}}", process.platform)
-  .replace("{{shell}}", process.env.SHELL || "unknown");
+  .replace('{{cwd}}', process.cwd())
+  .replace('{{date}}', new Date().toLocaleDateString())
+  .replace('{{platform}}', process.platform)
+  .replace('{{shell}}', process.env.SHELL || 'unknown');
 
 export { systemPrompt };

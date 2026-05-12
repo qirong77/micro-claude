@@ -1,17 +1,15 @@
-import { MicaAgent } from "./agent";
-import { slashPlugin } from "./plugins/plugin-slash";
-MicaAgent.usePlugin(slashPlugin);
+import { MicaAgent } from './agent.js';
+import { autoCompactPlugin } from './plugins/auto-compact-plugin.js';
+import { inputHistoryPlugin } from './plugins/input-history-plugin.js';
+import { quickCommandLogPlugin } from './plugins/quick-command/quick-command-log-plugin.js';
 
-async function main() {
-    console.log("Micro Claude 已启动。输入 exit 退出。");
-    while (true) {
-        const userInput = await MicaAgent.handleUserInput();
-        if (!userInput) continue;
-        await MicaAgent.agentTurn.run(userInput);
-    }
-}
-
-main().catch((error) => {
-    console.error(error);
-    process.exit(1);
+MicaAgent.ui.run();
+MicaAgent.ui.setState({
+  messages: [],
+  isLoading: false,
+  quickCommands: [],
 });
+
+MicaAgent.usePlugin(autoCompactPlugin);
+MicaAgent.usePlugin(inputHistoryPlugin);
+MicaAgent.usePlugin(quickCommandLogPlugin);

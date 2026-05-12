@@ -39,11 +39,11 @@ mica
 
 ### 环境变量
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `ANTHROPIC_API_KEY` | API 密钥 | (必填) |
+| 变量                 | 说明     | 默认值                               |
+| -------------------- | -------- | ------------------------------------ |
+| `ANTHROPIC_API_KEY`  | API 密钥 | (必填)                               |
 | `ANTHROPIC_BASE_URL` | API 端点 | `https://api.deepseek.com/anthropic` |
-| `ANTHROPIC_MODEL` | 使用模型 | `claude-sonnet-4-6` |
+| `ANTHROPIC_MODEL`    | 使用模型 | `claude-sonnet-4-6`                  |
 
 ## 可用工具
 
