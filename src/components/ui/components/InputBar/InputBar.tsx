@@ -35,7 +35,9 @@ export function InputBar({
 
   return (
     <Box flexDirection="column">
-      <Text dimColor>{separator}</Text>
+      <Box>
+        <Text dimColor>{separator}</Text>
+      </Box>
       {value ? (
         lines.map((line, i) => (
           <Box key={i} paddingX={1}>
@@ -66,7 +68,9 @@ export function InputBar({
           <Text dimColor> {placeholder}</Text>
         </Box>
       )}
-      <Text dimColor>{separator}</Text>
+      <Box>
+        <Text dimColor>{separator}</Text>
+      </Box>
     </Box>
   );
 }
