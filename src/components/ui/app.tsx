@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo, useReducer, useState } from 'react';
 import { Box, useInput } from 'ink';
-import type Anthropic from '@anthropic-ai/sdk';
 import type { Command } from './data.js';
 
 import { LogArea } from './components/LogArea.js';
-import { RunningStatus } from './components/RunningStatus.js';
+import { StatusBar } from './components/StatusBar.js';
+import { ThinkText } from './components/ThinkText.js';
+import { ToolCallList } from './components/ToolCallList.js';
 import { CommandDropdown } from './components/CommandDropdown.js';
 import {
   InputBar,
@@ -15,15 +16,13 @@ import {
 
 interface AppProps {
   isLoading?: boolean;
-  quickCommands: Command[];
+  quickCommands: readonly Command[];
   onSubmit?: (text: string) => void;
-  statuses?: Array<{ id: string; text: string }>;
 }
 
 export function App({
   quickCommands,
   onSubmit,
-  statuses,
 }: AppProps): React.ReactNode {
   const [state, dispatch] = useReducer(inputReducer, initialState);
   const { value: inputValue, cursor: cursorOffset } = state;
@@ -64,7 +63,9 @@ export function App({
     <Box flexDirection="column" height="100%">
       <LogArea />
       <InputBar value={inputValue} cursorOffset={cursorOffset} />
-      <RunningStatus/>
+      <StatusBar />
+      <ToolCallList />
+      <ThinkText />
       {showDropdown && (
         <CommandDropdown
           commands={filteredCommands}

@@ -1,13 +1,12 @@
-import { MicaAgent } from './agent.js';
-import { autoCompactPlugin } from './plugins/auto-compact-plugin.js';
-import { errorHandlerPlugin } from './plugins/error-handler-plugin.js';
-import { quickCommandLogPlugin } from './plugins/quick-command/quick-command-log-plugin.js';
-import { chatHistoryPlugin } from './plugins/chat-history-plugin.js';
+import { MicaAgent } from './core/agent.js';
+import { AutoCompactPlugin } from './plugins/agent/auto-compact-plugin.js';
+import { ErrorHandlerPlugin } from './plugins/agent/error-handler-plugin.js';
+import { QuickCommandLogPlugin } from './plugins/quick-command/quick-command-log-plugin.js';
+import { ChatHistoryPlugin } from './plugins/ui/chat-history-plugin.js';
 
-MicaAgent.usePlugin(errorHandlerPlugin);
-MicaAgent.usePlugin(autoCompactPlugin);
-MicaAgent.usePlugin(quickCommandLogPlugin);
-MicaAgent.usePlugin(chatHistoryPlugin);
-
+await MicaAgent.usePlugin(new AutoCompactPlugin());
+await MicaAgent.usePlugin(new ErrorHandlerPlugin());
+await MicaAgent.usePlugin(new QuickCommandLogPlugin());
+await MicaAgent.usePlugin(new ChatHistoryPlugin());
 
 MicaAgent.ui.run();

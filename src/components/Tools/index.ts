@@ -5,8 +5,9 @@ import { ToolWriteFile } from './ToolWriteFile';
 import { ToolEditFile } from './ToolEditFile';
 import { ToolListFiles } from './ToolListFiles';
 import { ToolGrepSearch } from './ToolGrepSearch';
-import { ToolRunShell } from '../ui/examples/ToolRunShell';
+
 import { MicaTool } from './MicaTool';
+import { ToolRunShell } from './ToolRunShell';
 
 const tools: MicaTool[] = [
   new ToolReadFile(),

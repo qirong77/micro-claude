@@ -2,8 +2,9 @@ import React from 'react';
 import { Box, Static, Text } from 'ink';
 import type Anthropic from '@anthropic-ai/sdk';
 import { C } from '../data.js';
-import { MarkdownRenderText } from './MarkdownRenderText.js';
 import { messagesAtom } from '../../../store/index.js';
+import { useSchedulState } from '../hooks/useSchedulState.js';
+import { MarkdownRenderByLine } from './MarkdownRenderByLine.js';
 
 // ── LogArea 内部使用的消息类型 ────────────────────────────
 // Anthropic.MessageParam 不包含 status 字段，但我们需要在 UI 中区分流式消息
@@ -34,8 +35,9 @@ export const LogArea = (): React.ReactNode => {
 
   // 从流式 assistant 消息中提取最后的不完整行
   let nextLastLine = '';
-  const messages = messagesAtom.get();
-  const staticItems = messages.flatMap((msg, i): LogItem[] => {
+  const messages = useSchedulState(messagesAtom);
+  const staticItems = messages.flatMap((raw, i): LogItem[] => {
+    const msg = raw as LogMessage;
     const text = getTextContent(msg.content);
     if (!text) return [];
     if (msg.role === 'user') {
@@ -87,7 +89,7 @@ export const LogArea = (): React.ReactNode => {
           }
           return (
             <Box key={item.id}>
-              <MarkdownRenderText text={item.text} />
+              <MarkdownRenderByLine text={item.text} />
             </Box>
           );
         }}

@@ -1,5 +1,5 @@
-import { execSync } from 'child_process';
-import { MicaTool } from '../../tools/MicaTool';
+import { exec } from 'child_process';
+import { MicaTool } from './MicaTool';
 
 export class ToolRunShell extends MicaTool {
   constructor() {
@@ -14,12 +14,19 @@ export class ToolRunShell extends MicaTool {
   }
 
   async execute(input: { command: string; timeout?: number }): Promise<string> {
-    const result = execSync(input.command, {
-      encoding: 'utf-8',
-      maxBuffer: 5 * 1024 * 1024,
-      timeout: input.timeout || 30000,
+    return new Promise((resolve, reject) => {
+      const child = exec(input.command, {
+        encoding: 'utf-8',
+        maxBuffer: 5 * 1024 * 1024,
+        timeout: input.timeout || 30000,
+      }, (error, stdout) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(stdout || '(no output)');
+        }
+      });
     });
-    return result || '(no output)';
   }
   onToolUseDisplayText(input: Record<string, any>): string {
     return `run_shell: ${input.command}`;

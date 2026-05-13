@@ -1,5 +1,5 @@
-import type { IMicaAgent } from '../agent';
 import type Anthropic from '@anthropic-ai/sdk';
+import { MicaPlugin } from '../MicaPlugin';
 
 /**
  * 将 messages 重新处理，减少噪声。
@@ -8,16 +8,20 @@ import type Anthropic from '@anthropic-ai/sdk';
  */
 const MAX_FULL_TOOL_RESULTS = 3;
 const MAX_TOOL_RESULT_LENGTH = 10000; // 超过部分截断
-export function autoCompactPlugin(agent: IMicaAgent) {
-  const originalRun = agent.agentTurn.run.bind(agent.agentTurn);
 
-  agent.agentTurn.run = async function (
-    userInput: string,
-    callbacks?: Parameters<typeof originalRun>[1],
-  ) {
-    compactMessages(agent.agentTurn.messages);
-    return originalRun(userInput, callbacks);
-  };
+export class AutoCompactPlugin extends MicaPlugin {
+  onInstall(): void {
+    const originalRun = this.agent.agentTurn.run.bind(this.agent.agentTurn);
+    const getMessages = () => this.store.messages.get();
+
+    this.agent.agentTurn.run = async function (
+      userInput: string,
+      callbacks?: Parameters<typeof originalRun>[1],
+    ) {
+      compactMessages(getMessages());
+      return originalRun(userInput, callbacks);
+    };
+  }
 }
 
 function compactMessages(messages: Anthropic.MessageParam[]) {

@@ -1,9 +1,9 @@
 import { render } from 'ink';
 import React, { useCallback } from 'react';
-import { useStore } from '@nanostores/react';
 import { App } from './app.js';
 import type { Command, InputHandler } from './data.js';
-import { messagesAtom, isLoadingAtom, quickCommandsAtom, statusesAtom, type UiMessageParam } from '../../store/index.js';
+import { quickCommandsAtom } from '../../store/index.js';
+import { useSchedulState } from './hooks/useSchedulState.js';
 
 // ── onSubmit callback — called when user submits free-form text (not a /command) ──
 let _onSubmit: ((text: string) => void) | null = null;
@@ -26,10 +26,7 @@ export function getInputHandlers(): InputHandler[] {
 }
 
 function Root() {
-  const messages = useStore(messagesAtom);
-  const isLoading = useStore(isLoadingAtom);
-  const quickCommands = useStore(quickCommandsAtom);
-  const statuses = useStore(statusesAtom);
+  const quickCommands = useSchedulState(quickCommandsAtom);
 
   const handleSubmit = useCallback((text: string) => {
     _onSubmit?.(text);
@@ -37,10 +34,7 @@ function Root() {
 
   return (
     <App
-      messages={messages}
-      isLoading={isLoading}
       quickCommands={quickCommands}
-      statuses={statuses}
       onSubmit={handleSubmit}
     />
   );

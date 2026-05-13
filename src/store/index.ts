@@ -5,31 +5,38 @@ import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import type { Command } from '../components/ui/data.js';
 
-// 显式加载 .env，并覆盖已有同名环境变量，确保以项目配置为准
 dotenv.config({ override: true });
 
 export const cacheDir = resolve(homedir(), '.mica');
 
-// ── Types ───────────────────────────────────────────────
 
-export type UiMessageParam = Anthropic.MessageParam & { status?: 'streaming' };
-
-export interface Session {
-  id: string;
-  title: string;
-  messages: UiMessageParam[];
-  updatedAt: number;
-}
 
 // ── Config atoms (read-only after init) ─────────────────
 
-export const baseUrlAtom = atom('https://api.deepseek.com/anthropic');
-export const apiKeyAtom = atom('sk-18e46c2abdda419e83ef03a87b5c821a');
+export const baseUrlAtom = atom(process.env.ANTHROPIC_BASE_URL);
+export const apiKeyAtom = atom(process.env.ANTHROPIC_API_KEY);
 export const modelAtom = atom(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6');
 
-// ── Core UI atoms ───────────────────────────────────────
 
-export const messagesAtom = atom<UiMessageParam[]>([]);
+export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
 export const isLoadingAtom = atom(false);
 export const quickCommandsAtom = atom<Command[]>([]);
+
+// ── UI 状态 atoms ──────────────────────────────────────
+
+/** 通用状态栏消息 */
 export const statusesAtom = atom<Array<{ id: string; text: string }>>([]);
+
+/** 大模型思考文案（当前流式输出） */
+export const thinkingTextAtom = atom('');
+
+/** 工具调用列表 */
+export const toolCallsAtom = atom<
+  Array<{
+    id: string;
+    toolName: string;
+    toolInput: Record<string, any>;
+    completed: boolean;
+    displayText: string;
+  }>
+>([]);
