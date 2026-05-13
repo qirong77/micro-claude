@@ -95,6 +95,11 @@ export const LogArea = (): React.ReactNode => {
         }}
       </Static>
       {lastLineText ? <Text>{lastLineText}</Text> : null}
+      <Box>
+        <Text>
+          🎉task completed
+        </Text>
+      </Box>
     </Box>
   );
 };

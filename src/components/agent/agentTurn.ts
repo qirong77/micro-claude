@@ -64,24 +64,28 @@ class AgentTurn {
     messagesAtom.set([...messages, finalMessage]);
     // 执行工具并收集结果
     if (completedToolUses.length > 0) {
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
       for (const tool of completedToolUses) {
-        let result: string;
-        try {
-          this.onToolUseFns.forEach((fn) => fn(tool.id, tool.name, tool.input, false));
-          result = await executeTool(tool.name, tool.input);
-        } catch (error) {
-          const message =
-            error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-          result = `工具 ${tool.name} 执行异常：\n${message}`;
-        }
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: tool.id,
-          content: result,
-        });
+        this.onToolUseFns.forEach((fn) => fn(tool.id, tool.name, tool.input, false));
+      }
+
+      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      const settled = await Promise.allSettled(
+        completedToolUses.map((tool) => executeTool(tool.name, tool.input)),
+      );
+
+      for (let i = 0; i < completedToolUses.length; i++) {
+        const tool = completedToolUses[i];
+        const r = settled[i];
+        const result =
+          r.status === 'fulfilled'
+            ? r.value
+            : `工具 ${tool.name} 执行异常：\n${
+                r.reason instanceof Error ? `${r.reason.name}: ${r.reason.message}` : String(r.reason)
+              }`;
+        toolResults.push({ type: 'tool_result', tool_use_id: tool.id, content: result });
         this.onToolUseFns.forEach((fn) => fn(tool.id, tool.name, tool.input, true));
       }
+
       messagesAtom.set([
         ...messagesAtom.get(),
         {

@@ -39,7 +39,7 @@ export class ErrorHandlerPlugin extends MicaPlugin {
         } catch (error) {
           attempt++;
           if (!isRetryable(error) || attempt >= RETRY_MAX_ATTEMPTS) throw error;
-          console.log(error)
+          showStatus(String(error))
           const delay = Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS);
           console.error(`[ErrorHandler] 第 ${attempt} 次重试失败，${delay / 1000}s 后重试...`);
           let restTime = delay / 1000;

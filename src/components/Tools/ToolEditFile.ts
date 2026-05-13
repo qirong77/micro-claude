@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { readFile, writeFile } from 'fs/promises';
 import { MicaTool } from './MicaTool';
 
 export class ToolEditFile extends MicaTool {
@@ -19,12 +19,13 @@ export class ToolEditFile extends MicaTool {
     old_string: string;
     new_string: string;
   }): Promise<string> {
-    const content = readFileSync(input.file_path, 'utf-8');
+    const content = await readFile(input.file_path, 'utf-8');
     if (!content.includes(input.old_string)) return `未找到匹配文本`;
     const newContent = content.replace(input.old_string, input.new_string);
-    writeFileSync(input.file_path, newContent);
+    await writeFile(input.file_path, newContent);
     return `编辑成功: ${input.file_path}`;
   }
+
   onToolUseDisplayText(input: Record<string, any>): string {
     return `edit_file: ${input.file_path}`;
   }

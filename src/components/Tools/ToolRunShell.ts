@@ -14,20 +14,25 @@ export class ToolRunShell extends MicaTool {
   }
 
   async execute(input: { command: string; timeout?: number }): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const child = exec(input.command, {
+    return new Promise((resolve) => {
+      exec(input.command, {
         encoding: 'utf-8',
         maxBuffer: 5 * 1024 * 1024,
         timeout: input.timeout || 30000,
-      }, (error, stdout) => {
+      }, (error, stdout, stderr) => {
+        let output = stdout || '';
+        if (stderr) output += (output ? '\n' : '') + stderr;
+        const msg = output || '(no output)';
         if (error) {
-          reject(error);
+          const reason = error.killed ? '超时或被终止' : `退出码: ${error.code ?? 'unknown'}`;
+          resolve(`(${reason})\n${msg}`);
         } else {
-          resolve(stdout || '(no output)');
+          resolve(msg);
         }
       });
     });
   }
+
   onToolUseDisplayText(input: Record<string, any>): string {
     return `run_shell: ${input.command}`;
   }
