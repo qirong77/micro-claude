@@ -1,6 +1,27 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { C } from '../../data.js';
+import { inputBarStatusAtom } from '../../../../store/index.js';
+import { useSchedulState } from '../../hooks/useSchedulState.js';
+
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+function useSpinner(delay = 80): string {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setFrame((f) => (f + 1) % SPINNER_FRAMES.length), delay);
+    return () => clearInterval(timer);
+  }, [delay]);
+  return SPINNER_FRAMES[frame];
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; spinner: boolean }> = {
+  idle: { label: '', color: '', spinner: false },
+  thinking: { label: 'Thinking', color: C.cyan, spinner: true },
+  calling_tool: { label: 'Calling tool', color: C.primary, spinner: true },
+  completed: { label: 'Done', color: C.success, spinner: false },
+  error: { label: 'Error', color: C.error, spinner: false },
+};
 
 export function InputBar({
   value,
@@ -13,6 +34,8 @@ export function InputBar({
 }): React.ReactNode {
   const { stdout } = useStdout();
   const separator = useMemo(() => '─'.repeat(stdout.columns), [stdout.columns]);
+  const status = useSchedulState(inputBarStatusAtom);
+  const spinner = useSpinner();
 
   const { lines, cursorLine, cursorCol } = useMemo(() => {
     const lines = value ? value.split('\n') : [];
@@ -33,6 +56,8 @@ export function InputBar({
     return { lines, cursorLine, cursorCol };
   }, [value, cursorOffset]);
 
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.idle;
+
   return (
     <Box flexDirection="column">
       <Box>
@@ -42,7 +67,7 @@ export function InputBar({
         <Box>
           <Text color={C.primary} >{'>'}</Text>
         </Box>
-        <Box flexDirection="column" marginLeft={1}>
+        <Box flexDirection="column" marginLeft={1} flexGrow={1}>
           {lines.length === 0 ? (
             <Box>
               <Text backgroundColor={C.primary}>
@@ -73,6 +98,13 @@ export function InputBar({
             ))
           )}
         </Box>
+        {cfg.label && (
+          <Box marginLeft={1}>
+            <Text color={cfg.color}>
+              {cfg.spinner ? `${spinner} ${cfg.label}...` : `\u2713 ${cfg.label}`}
+            </Text>
+          </Box>
+        )}
       </Box>
       <Box>
         <Text dimColor>{separator}</Text>

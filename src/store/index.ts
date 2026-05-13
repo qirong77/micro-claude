@@ -40,3 +40,7 @@ export const toolCallsAtom = atom<
     displayText: string;
   }>
 >([]);
+
+/** InputBar 右侧状态动画 */
+export type InputBarStatus = 'idle' | 'thinking' | 'calling_tool' | 'completed' | 'error';
+export const inputBarStatusAtom = atom<InputBarStatus>('idle');

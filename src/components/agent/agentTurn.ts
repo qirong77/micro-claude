@@ -2,11 +2,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, modelAtom } from '../../store';
+import { messagesAtom, modelAtom, inputBarStatusAtom } from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
-
-
 
 export interface IterationResult {
   hasToolUse: boolean;
@@ -38,7 +36,7 @@ class AgentTurn {
   }
   async executeSingleIteration(): Promise<IterationResult> {
     const messages = messagesAtom.get();
-    
+
     const stream = getClient().messages.stream({
       model: modelAtom.get(),
       max_tokens: 2048,
@@ -80,10 +78,17 @@ class AgentTurn {
           r.status === 'fulfilled'
             ? r.value
             : `工具 ${tool.name} 执行异常：\n${
-                r.reason instanceof Error ? `${r.reason.name}: ${r.reason.message}` : String(r.reason)
+                r.reason instanceof Error
+                  ? `${r.reason.name}: ${r.reason.message}`
+                  : String(r.reason)
               }`;
         toolResults.push({ type: 'tool_result', tool_use_id: tool.id, content: result });
         this.onToolUseFns.forEach((fn) => fn(tool.id, tool.name, tool.input, true));
+
+        // 如果工具执行失败，标记为错误状态
+        if (r.status === 'rejected') {
+          inputBarStatusAtom.set('error');
+        }
       }
 
       messagesAtom.set([
