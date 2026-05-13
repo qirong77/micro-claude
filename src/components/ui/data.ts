@@ -20,7 +20,7 @@ export const C = {
 export interface Command {
   name: string;
   description: string;
-  action: () => void;
+  action: (arg?: string) => void;
 }
 
 // ── Input reducer types (shared with plugins) ──────────
@@ -40,6 +40,10 @@ export interface InputContext {
   inputValue: string;
   cursorOffset: number;
   showDropdown: boolean;
+  /** 0-based current line index */
+  currentRow: number;
+  /** Total number of lines */
+  totalRows: number;
   dispatch: React.Dispatch<InputAction>;
 }
 

@@ -1,7 +1,14 @@
-import { agentTurn } from './components/agentTurn';
+import { agentTurn, type RetryWaitPhase } from './components/agent/agentTurn';
 import { getToolDisplayText } from './components/tools';
 import { ui } from './components/ui';
-import type Anthropic from '@anthropic-ai/sdk';
+import { isLoadingAtom, messagesAtom, statusesAtom, type UiMessageParam } from './store';
+
+const RETRY_WAIT_STATUS_ID = '__retry_wait__';
+
+function retryWaitStatusText(elapsedSec: number, totalMs: number): string {
+  const totalSec = Math.max(1, Math.ceil(totalMs / 1000));
+  return `连接异常，退避重试中… 已等待 ${elapsedSec} 秒（约 ${totalSec} 秒内重试）`;
+}
 
 ui.onUserSubmit(async (text) => {
   const MAX_STATUSES = 10;
@@ -22,14 +29,17 @@ ui.onUserSubmit(async (text) => {
       flushTimer = null;
     }
     lastFlushTime = Date.now();
-    const streamingMsg: Anthropic.MessageParam | null = streamingText
+    const streamingMsg: UiMessageParam | null = streamingText
       ? { role: 'assistant', content: streamingText, status: 'streaming' }
       : null;
-    MicaAgent.ui.setState({
-      messages: streamingMsg ? [...agentTurn.messages, streamingMsg] : [...agentTurn.messages],
-      isLoading,
-      statuses: activeToolStatuses,
-    });
+    messagesAtom.set([...agentTurn.messages, ...(streamingMsg ? [streamingMsg] : [])]);
+    isLoadingAtom.set(isLoading);
+    statusesAtom.set(
+      activeToolStatuses.map(({ id, text, completed }) => ({
+        id,
+        text: completed ? `${text} ☑️` : text,
+      })),
+    );
   };
 
   const scheduleFlush = (immediate = false) => {
@@ -89,6 +99,33 @@ ui.onUserSubmit(async (text) => {
       streamingText = '';
       isLoading = false;
       activeToolStatuses = [];
+      scheduleFlush(true);
+    },
+    onRetryWait(phase: RetryWaitPhase, ctx) {
+      if (phase === 'start') {
+        activeToolStatuses = [
+          {
+            id: RETRY_WAIT_STATUS_ID,
+            text: retryWaitStatusText(ctx.elapsedSec, ctx.totalMs),
+            completed: false,
+          },
+        ];
+        isLoading = true;
+        scheduleFlush(true);
+        return;
+      }
+      if (phase === 'tick') {
+        activeToolStatuses = activeToolStatuses.map((s) =>
+          s.id === RETRY_WAIT_STATUS_ID
+            ? { ...s, text: retryWaitStatusText(ctx.elapsedSec, ctx.totalMs) }
+            : s,
+        );
+        scheduleFlush(true);
+        return;
+      }
+      // end：去掉退避提示，保持 loading 直至下一次流式响应
+      activeToolStatuses = [];
+      isLoading = true;
       scheduleFlush(true);
     },
   });

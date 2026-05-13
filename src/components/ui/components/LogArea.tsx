@@ -3,6 +3,7 @@ import { Box, Static, Text } from 'ink';
 import type Anthropic from '@anthropic-ai/sdk';
 import { C } from '../data.js';
 import { MarkdownRenderText } from './MarkdownRenderText.js';
+import { messagesAtom } from '../../../store/index.js';
 
 // ── LogArea 内部使用的消息类型 ────────────────────────────
 // Anthropic.MessageParam 不包含 status 字段，但我们需要在 UI 中区分流式消息
@@ -28,12 +29,12 @@ interface LogItem {
   text: string;
 }
 
-export const LogArea = ({ messages }: { messages: LogMessage[] }): React.ReactNode => {
+export const LogArea = (): React.ReactNode => {
   const [lastLineText, setLastLineText] = React.useState('');
 
   // 从流式 assistant 消息中提取最后的不完整行
   let nextLastLine = '';
-
+  const messages = messagesAtom.get();
   const staticItems = messages.flatMap((msg, i): LogItem[] => {
     const text = getTextContent(msg.content);
     if (!text) return [];

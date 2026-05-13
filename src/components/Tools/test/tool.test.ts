@@ -4,7 +4,7 @@ import path from 'path';
 import { tmpdir } from 'os';
 
 // 直接导入待测试函数
-import { toolDefinitions, executeTool } from '../src/components/tools/index';
+import { toolDefinitions, executeTool } from '../index';
 
 describe('toolDefinitions', () => {
   it('应包含所有 6 个工具定义', () => {

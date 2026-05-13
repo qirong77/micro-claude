@@ -14,7 +14,6 @@ import {
 } from './components/InputBar/index.js';
 
 interface AppProps {
-  messages: Anthropic.MessageParam[];
   isLoading?: boolean;
   quickCommands: Command[];
   onSubmit?: (text: string) => void;
@@ -22,8 +21,6 @@ interface AppProps {
 }
 
 export function App({
-  messages,
-  isLoading,
   quickCommands,
   onSubmit,
   statuses,
@@ -42,9 +39,9 @@ export function App({
   );
 
   const executeCommand = useCallback(
-    (name: string) => {
+    (name: string, arg?: string) => {
       const cmd = quickCommands.find((c) => c.name === name);
-      cmd?.action();
+      cmd?.action(arg);
     },
     [quickCommands],
   );
@@ -65,9 +62,9 @@ export function App({
 
   return (
     <Box flexDirection="column" height="100%">
-      <LogArea messages={messages} />
+      <LogArea />
       <InputBar value={inputValue} cursorOffset={cursorOffset} />
-      <RunningStatus statuses={statuses} />
+      <RunningStatus/>
       {showDropdown && (
         <CommandDropdown
           commands={filteredCommands}

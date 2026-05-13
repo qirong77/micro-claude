@@ -1,4 +1,5 @@
 import { ui } from '..';
+import { messagesAtom } from '../../../store';
 import { EXAMPLE_CHUNKS } from './const';
 
 ui.run();
@@ -10,15 +11,15 @@ const INITIAL_MESSAGES = [
 ];
 
 // 先用初始消息渲染
-ui.setState({ messages: INITIAL_MESSAGES });
+messagesAtom.set({ messages: INITIAL_MESSAGES });
 
 let chunkIndex = 0;
 setInterval(() => {
   const content = EXAMPLE_CHUNKS.slice(0, chunkIndex + 1).join('');
-  const status = chunkIndex + 1 < EXAMPLE_CHUNKS.length ? 'streaming' : 'done';
+  const status = chunkIndex + 1 < EXAMPLE_CHUNKS.length ? ('streaming' as const) : undefined;
 
   // 保持前两条消息引用不变，只更新 streaming 消息
-  ui.setState({
+  messagesAtom.set({
     messages: [
       INITIAL_MESSAGES[0],
       INITIAL_MESSAGES[1],

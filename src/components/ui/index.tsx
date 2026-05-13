@@ -1,9 +1,9 @@
 import { render } from 'ink';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type Anthropic from '@anthropic-ai/sdk';
+import React, { useCallback } from 'react';
+import { useStore } from '@nanostores/react';
 import { App } from './app.js';
 import type { Command, InputHandler } from './data.js';
-import { getState, setState as storeSetState, subscribe } from '../../store/index.js';
+import { messagesAtom, isLoadingAtom, quickCommandsAtom, statusesAtom, type UiMessageParam } from '../../store/index.js';
 
 // ── onSubmit callback — called when user submits free-form text (not a /command) ──
 let _onSubmit: ((text: string) => void) | null = null;
@@ -26,48 +26,11 @@ export function getInputHandlers(): InputHandler[] {
 }
 
 function Root() {
-  const [uiState, setUiState] = useState(() => {
-    const s = getState();
-    return {
-      messages: s.messages,
-      isLoading: s.isLoading,
-      quickCommands: s.quickCommands,
-      statuses: s.statuses,
-    };
-  });
+  const messages = useStore(messagesAtom);
+  const isLoading = useStore(isLoadingAtom);
+  const quickCommands = useStore(quickCommandsAtom);
+  const statuses = useStore(statusesAtom);
 
-  // Keep a ref to the latest setter so the store listener can always use it
-  const setUiStateRef = useRef(setUiState);
-  setUiStateRef.current = setUiState;
-
-  // Subscribe to unified store changes — with shallow comparison to reduce re-renders
-  useEffect(() => {
-    let prev: ReturnType<typeof getState> | null = null;
-    const unsub = subscribe((s) => {
-      // 浅比较：如果关键字段都没变，跳过更新
-      if (prev) {
-        const msgsSame = s.messages === prev.messages;
-        const loadingSame = s.isLoading === prev.isLoading;
-        const qcSame = s.quickCommands === prev.quickCommands;
-        const statusesSame = s.statuses === prev.statuses;
-        if (msgsSame && loadingSame && qcSame && statusesSame) {
-          return;
-        }
-      }
-      prev = { ...s };
-      setUiStateRef.current({
-        messages: s.messages,
-        isLoading: s.isLoading,
-        quickCommands: s.quickCommands,
-        statuses: s.statuses,
-      });
-    });
-    return unsub;
-  }, []);
-
-  const { messages, isLoading, quickCommands, statuses } = uiState;
-
-  // Call the external onSubmit when user submits text
   const handleSubmit = useCallback((text: string) => {
     _onSubmit?.(text);
   }, []);
@@ -87,20 +50,7 @@ function run() {
   render(<Root />);
 }
 
-function setState(
-  update: Partial<{
-    messages: Anthropic.MessageParam[];
-    isLoading: boolean;
-    quickCommands: Command[];
-    statuses: Array<{ id: string; text: string }>;
-  }>,
-) {
-  storeSetState(update);
-}
 
-function getUiState() {
-  return getState();
-}
 
 function onUserSubmit(cb: (text: string) => void) {
   _onSubmit = cb;
@@ -108,8 +58,6 @@ function onUserSubmit(cb: (text: string) => void) {
 
 export const ui = {
   run,
-  setState,
-  getState: getUiState,
   onUserSubmit,
   addInputHandler,
   getInputHandlers,

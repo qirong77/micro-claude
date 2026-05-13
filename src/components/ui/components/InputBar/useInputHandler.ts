@@ -12,7 +12,7 @@ interface UseInputHandlerParams {
   selectedIndex: number;
   dispatch: React.Dispatch<InputAction>;
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
-  executeCommand: (name: string) => void;
+  executeCommand: (name: string, arg?: string) => void;
   onSubmit?: (text: string) => void;
 }
 
@@ -33,6 +33,8 @@ export function useInputHandler({
       inputValue,
       cursorOffset,
       showDropdown,
+      currentRow: rowOf(inputValue, cursorOffset),
+      totalRows: rowOf(inputValue, inputValue.length) + 1,
       dispatch,
     };
 
@@ -169,11 +171,14 @@ export function useInputHandler({
 
       // If input starts with /, treat as a command
       if (text.startsWith('/')) {
-        executeCommand(text.slice(1));
+        const cmdText = text.slice(1);
+        const spaceIdx = cmdText.indexOf(' ');
+        const cmdName = spaceIdx >= 0 ? cmdText.slice(0, spaceIdx) : cmdText;
+        const cmdArg = spaceIdx >= 0 ? cmdText.slice(spaceIdx + 1).trim() : undefined;
+        executeCommand(cmdName, cmdArg);
         return;
       }
 
-      // Free-form text — call onSubmit (the consumer manages messages via setState)
       onSubmit?.(text);
       return;
     }
