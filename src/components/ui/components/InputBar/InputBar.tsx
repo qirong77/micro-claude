@@ -1,19 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { C } from '../../data.js';
 import { inputBarStatusAtom } from '../../../../store/index.js';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
-
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-
-function useSpinner(delay = 80): string {
-  const [frame, setFrame] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setFrame((f) => (f + 1) % SPINNER_FRAMES.length), delay);
-    return () => clearInterval(timer);
-  }, [delay]);
-  return SPINNER_FRAMES[frame];
-}
+import { useSpinner } from '../common/Spin.js';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; spinner: boolean }> = {
   idle: { label: '', color: '', spinner: false },

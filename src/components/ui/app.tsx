@@ -7,6 +7,7 @@ import { StatusBar } from './components/StatusBar.js';
 import { ThinkText } from './components/ThinkText.js';
 import { ToolCallList } from './components/ToolCallList.js';
 import { CommandDropdown } from './components/CommandDropdown.js';
+import { IfComponent } from './components/common/IfComponent.js';
 import {
   InputBar,
   inputReducer,

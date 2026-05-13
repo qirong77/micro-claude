@@ -1,23 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Box, Text } from 'ink';
 import { toolCallsAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
-
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-
-function useSpinner(delay = 80): string {
-  const [frame, setFrame] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setFrame((f) => (f + 1) % SPINNER_FRAMES.length), delay);
-    return () => clearInterval(timer);
-  }, [delay]);
-  return SPINNER_FRAMES[frame];
-}
+import { Spin } from './common/Spin.js';
+import { IfComponent } from './common/IfComponent.js';
 
 export const ToolCallList = React.memo(function ToolCallList(): React.ReactNode {
   const toolCalls = useSchedulState(toolCallsAtom);
-  const spinner = useSpinner();
-
   if (!toolCalls || toolCalls.length === 0) return null;
 
   const sorted = [...toolCalls].sort((a, b) => Number(a.completed) - Number(b.completed));
@@ -28,7 +17,9 @@ export const ToolCallList = React.memo(function ToolCallList(): React.ReactNode 
       {displayed.map((tc) => (
         <Box key={tc.id}>
           <Text dimColor>
-            {!tc.completed && <Text>{spinner} </Text>}
+            <IfComponent condition={!tc.completed}>
+              <Spin />
+            </IfComponent>
             <Text>{tc.displayText}</Text>
           </Text>
         </Box>
