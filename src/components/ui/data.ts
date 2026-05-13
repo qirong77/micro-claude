@@ -26,7 +26,8 @@ export type InputAction =
   | { type: 'backspace' }
   | { type: 'delete' }
   | { type: 'clear' }
-  | { type: 'move'; cursor: number };
+  | { type: 'move'; cursor: number }
+  | { type: 'set'; value: string; cursor: number };
 
 // ── Extensible input handler plugin system ─────────────
 

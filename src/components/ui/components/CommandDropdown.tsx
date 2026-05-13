@@ -24,8 +24,8 @@ export function CommandDropdown({
         const isSelected = i === selectedIndex;
         return (
           <Box key={cmd.name}>
-            <Text color={isSelected ? C.primary : C.dim}>{isSelected ? '▸' : ' '}</Text>
-            <Text bold color={isSelected ? C.primary : C.secondary}>
+            <Text color={isSelected ? C.primary : ''}>{isSelected ? '▸' : ' '}</Text>
+            <Text bold color={isSelected ? C.primary : ''}>
               {' '}
               /{cmd.name}
             </Text>

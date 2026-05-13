@@ -22,7 +22,9 @@ export function inputReducer(state: InputState, action: InputAction): InputState
     case 'clear':
       return { value: '', cursor: 0 };
     case 'move':
-      return { ...state, cursor: action.cursor };
+      return { ...state, cursor: Math.max(0, Math.min(action.cursor, state.value.length)) };
+    case 'set':
+      return { value: action.value, cursor: Math.max(0, Math.min(action.cursor, action.value.length)) };
   }
 }
 

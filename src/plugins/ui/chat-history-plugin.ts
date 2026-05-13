@@ -65,9 +65,7 @@ export class ChatHistoryPlugin extends MicaPlugin {
 
         this.historyIndex = Math.min(this.historyIndex + 1, this.history.length - 1);
         const text = this.history[this.history.length - 1 - this.historyIndex];
-        ctx.dispatch({ type: 'clear' });
-        ctx.dispatch({ type: 'insert', text });
-        ctx.dispatch({ type: 'move', cursor: text.length });
+        ctx.dispatch({ type: 'set', value: text, cursor: text.length });
         updateStatus();
         return true;
       }
@@ -78,18 +76,14 @@ export class ChatHistoryPlugin extends MicaPlugin {
 
         this.historyIndex--;
         if (this.historyIndex < 0) {
-          ctx.dispatch({ type: 'clear' });
-          ctx.dispatch({ type: 'insert', text: this.currentInput });
-          ctx.dispatch({ type: 'move', cursor: this.currentInput.length });
+          ctx.dispatch({ type: 'set', value: this.currentInput, cursor: this.currentInput.length });
           this.currentInput = '';
           updateStatus();
           return true;
         }
 
         const text = this.history[this.history.length - 1 - this.historyIndex];
-        ctx.dispatch({ type: 'clear' });
-        ctx.dispatch({ type: 'insert', text });
-        ctx.dispatch({ type: 'move', cursor: text.length });
+        ctx.dispatch({ type: 'set', value: text, cursor: text.length });
         updateStatus();
         return true;
       }
