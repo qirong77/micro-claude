@@ -4,7 +4,7 @@ import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
 import { messagesAtom, modelAtom } from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
-import { client } from './client';
+import { getClient } from './client';
 
 
 
@@ -12,8 +12,6 @@ export interface IterationResult {
   hasToolUse: boolean;
   finalMessage: Anthropic.Message;
 }
-
-const MODEL = modelAtom.get();
 
 class AgentTurn {
   private onStreamCreateFns: Array<(stream: MessageStream<null>) => void> = [];
@@ -41,8 +39,8 @@ class AgentTurn {
   async executeSingleIteration(): Promise<IterationResult> {
     const messages = messagesAtom.get();
     
-    const stream = client.messages.stream({
-      model: MODEL,
+    const stream = getClient().messages.stream({
+      model: modelAtom.get(),
       max_tokens: 2048,
       system: systemPrompt,
       messages,
