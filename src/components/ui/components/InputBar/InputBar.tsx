@@ -38,36 +38,39 @@ export function InputBar({
       <Box>
         <Text dimColor>{separator}</Text>
       </Box>
-      {value ? (
-        lines.map((line, i) => (
-          <Box key={i} paddingX={1}>
-            <Text bold color={C.primary}>
-              {i === 0 ? '>' : ' '}
-            </Text>
-            <Text>
-              {' '}
-              {i === cursorLine ? (
-                <>
-                  {line.slice(0, cursorCol)}
-                  <Text color={C.primary}>█</Text>
-                  {line.slice(cursorCol)}
-                </>
-              ) : (
-                line
-              )}
-            </Text>
-          </Box>
-        ))
-      ) : (
-        <Box paddingX={1}>
-          <Text bold color={C.primary}>
-            {'>'}
-          </Text>
-          <Text> </Text>
-          <Text color={C.primary}>█</Text>
-          <Text dimColor> {placeholder}</Text>
+      <Box flexDirection="row">
+        <Box>
+          <Text color={C.primary} >{'>'}</Text>
         </Box>
-      )}
+        <Box flexDirection="column" marginLeft={1}>
+          {lines.length === 0 ? (
+            <Box>
+              <Text dimColor>{placeholder || ''}</Text>
+            </Box>
+          ) : (
+            lines.map((line, lineIdx) => (
+              <Box key={lineIdx}>
+                {lineIdx === cursorLine ? (
+                  <>
+                    {cursorCol > 0 && <Text>{line.substring(0, cursorCol)}</Text>}
+                    <Text
+                      backgroundColor={C.primary}
+                      key={`cursor-${lineIdx}`}
+                    >
+                      {line[cursorCol] || ' '}
+                    </Text>
+                    {cursorCol < line.length && (
+                      <Text>{line.substring(cursorCol + 1)}</Text>
+                    )}
+                  </>
+                ) : (
+                  <Text>{line}</Text>
+                )}
+              </Box>
+            ))
+          )}
+        </Box>
+      </Box>
       <Box>
         <Text dimColor>{separator}</Text>
       </Box>
