@@ -87,7 +87,7 @@ export function displayRowOf(
   cursorOffset: number,
   displayLines: DisplayLineInfo[],
 ): number {
-  for (let i = displayLines.length - 1; i >= 0; i--) {
+  for (let i = 0; i < displayLines.length; i++) {
     const dl = displayLines[i];
     if (cursorOffset >= dl.startOffset && cursorOffset <= dl.startOffset + dl.length) {
       return i;
