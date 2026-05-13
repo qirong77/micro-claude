@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useReducer, useState } from 'react';
-import { Box, useInput } from 'ink';
+import { Box, useInput, useStdout } from 'ink';
 import type { Command } from './data.js';
 
 import { LogArea } from './components/LogArea.js';
@@ -25,6 +25,7 @@ export function App({
   quickCommands,
   onSubmit,
 }: AppProps): React.ReactNode {
+  const { stdout } = useStdout();
   const [state, dispatch] = useReducer(inputReducer, initialState);
   const { value: inputValue, cursor: cursorOffset } = state;
 
@@ -56,6 +57,7 @@ export function App({
     setSelectedIndex,
     executeCommand,
     onSubmit,
+    terminalWidth: stdout.columns,
   });
 
   useInput(handleInput);

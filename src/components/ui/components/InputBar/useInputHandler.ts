@@ -1,7 +1,15 @@
 import React from 'react';
 import type { Key } from 'ink';
 import type { InputAction } from '../../data.js';
-import { colOf, rowOf, moveLine } from './cursorUtils.js';
+import {
+  colOf,
+  rowOf,
+  moveLine,
+  getDisplayLines,
+  displayRowOf,
+  displayColOf,
+  moveDisplayLine,
+} from './cursorUtils.js';
 import { getInputHandlers } from '../../index.js';
 
 interface UseInputHandlerParams {
@@ -14,6 +22,7 @@ interface UseInputHandlerParams {
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
   executeCommand: (name: string, arg?: string) => void;
   onSubmit?: (text: string) => void;
+  terminalWidth: number;
 }
 
 export function useInputHandler({
@@ -26,8 +35,12 @@ export function useInputHandler({
   setSelectedIndex,
   executeCommand,
   onSubmit,
+  terminalWidth,
 }: UseInputHandlerParams) {
   return (_char: string, key: Key) => {
+    // Pre-compute display lines for cursor movement that considers terminal width
+    const displayLines = getDisplayLines(inputValue, terminalWidth);
+
     // ── Build context for plugin handlers ──
     const ctx = {
       inputValue,
@@ -60,23 +73,26 @@ export function useInputHandler({
     // ── Multi-line cursor movement (when dropdown not focused) ──
     if (!showDropdown || filteredCommands.length === 0) {
       if (key.upArrow) {
-        const curRow = rowOf(inputValue, cursorOffset);
-        if (inputValue.includes('\n') && curRow > 0) {
+        const curDisplayRow = displayRowOf(cursorOffset, displayLines);
+        if (curDisplayRow > 0) {
+          const currentDl = displayLines[curDisplayRow];
+          const preferredCol = displayColOf(cursorOffset, currentDl);
           dispatch({
             type: 'move',
-            cursor: moveLine(inputValue, cursorOffset, -1, colOf(inputValue, cursorOffset)),
+            cursor: moveDisplayLine(inputValue, cursorOffset, -1, preferredCol, displayLines),
           });
           return;
         }
         return;
       }
       if (key.downArrow) {
-        const curRow = rowOf(inputValue, cursorOffset);
-        const lastRow = rowOf(inputValue, inputValue.length);
-        if (inputValue.includes('\n') && curRow < lastRow) {
+        const curDisplayRow = displayRowOf(cursorOffset, displayLines);
+        if (curDisplayRow < displayLines.length - 1) {
+          const currentDl = displayLines[curDisplayRow];
+          const preferredCol = displayColOf(cursorOffset, currentDl);
           dispatch({
             type: 'move',
-            cursor: moveLine(inputValue, cursorOffset, 1, colOf(inputValue, cursorOffset)),
+            cursor: moveDisplayLine(inputValue, cursorOffset, 1, preferredCol, displayLines),
           });
           return;
         }
