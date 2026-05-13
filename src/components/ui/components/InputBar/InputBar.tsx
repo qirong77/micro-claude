@@ -13,6 +13,85 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; spinner: boo
   error: { label: 'Error', color: C.error, spinner: false },
 };
 
+/**
+ * 根据文本和光标位置，计算考虑终端宽度的光标所在的"显示行"
+ * @returns { displayLines, cursorLineIdx, cursorColIdx }
+ */
+function calculateDisplayLines(
+  text: string,
+  cursorOffset: number,
+  terminalWidth: number,
+  promptWidth: number = 2, // '> '
+) {
+  const lines = text.split('\n');
+  const displayLines: string[] = [];
+  let cursorLineIdx = 0;
+  let cursorColIdx = 0;
+  let accumulatedOffset = 0;
+  let found = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineStartOffset = accumulatedOffset;
+    const lineEndOffset = accumulatedOffset + line.length;
+
+    // 计算该行是否包含光标
+    const cursorInThisLine = !found && cursorOffset >= lineStartOffset && cursorOffset <= lineEndOffset;
+    const cursorOffsetInLine = cursorInThisLine ? cursorOffset - lineStartOffset : -1;
+
+    // 根据终端宽度对该行进行软换行
+    const availableWidth = terminalWidth - promptWidth; // 减去提示符宽度
+    if (availableWidth <= 0) {
+      // 防止终端宽度过小
+      displayLines.push(line);
+      if (cursorInThisLine) {
+        cursorLineIdx = displayLines.length - 1;
+        cursorColIdx = cursorOffsetInLine;
+        found = true;
+      }
+    } else if (line.length === 0) {
+      displayLines.push('');
+      if (cursorInThisLine) {
+        cursorLineIdx = displayLines.length - 1;
+        cursorColIdx = 0;
+        found = true;
+      }
+    } else if (line.length <= availableWidth) {
+      // 该行不需要换行
+      displayLines.push(line);
+      if (cursorInThisLine) {
+        cursorLineIdx = displayLines.length - 1;
+        cursorColIdx = cursorOffsetInLine;
+        found = true;
+      }
+    } else {
+      // 需要进行软换行
+      let offset = 0;
+      while (offset < line.length) {
+        const chunk = line.substring(offset, offset + availableWidth);
+        displayLines.push(chunk);
+
+        if (cursorInThisLine && !found && cursorOffsetInLine >= offset && cursorOffsetInLine < offset + chunk.length) {
+          cursorLineIdx = displayLines.length - 1;
+          cursorColIdx = cursorOffsetInLine - offset;
+          found = true;
+        } else if (cursorInThisLine && !found && offset + chunk.length === line.length && cursorOffsetInLine === line.length) {
+          // 光标在行末的特殊情况
+          cursorLineIdx = displayLines.length - 1;
+          cursorColIdx = chunk.length;
+          found = true;
+        }
+
+        offset += availableWidth;
+      }
+    }
+
+    accumulatedOffset += line.length + 1; // +1 for newline
+  }
+
+  return { displayLines, cursorLineIdx, cursorColIdx };
+}
+
 export function InputBar({
   value,
   cursorOffset,
@@ -27,24 +106,12 @@ export function InputBar({
   const status = useSchedulState(inputBarStatusAtom);
   const spinner = useSpinner();
 
-  const { lines, cursorLine, cursorCol } = useMemo(() => {
-    const lines = value ? value.split('\n') : [];
-    let cursorLine = 0;
-    let cursorCol = 0;
-    if (lines.length > 0) {
-      let acc = 0;
-      for (let i = 0; i < lines.length; i++) {
-        const lineLen = lines[i].length;
-        if (acc + lineLen >= cursorOffset) {
-          cursorLine = i;
-          cursorCol = cursorOffset - acc;
-          break;
-        }
-        acc += lineLen + 1;
-      }
+  const { displayLines, cursorLineIdx, cursorColIdx } = useMemo(() => {
+    if (!value) {
+      return { displayLines: [], cursorLineIdx: 0, cursorColIdx: 0 };
     }
-    return { lines, cursorLine, cursorCol };
-  }, [value, cursorOffset]);
+    return calculateDisplayLines(value, cursorOffset, stdout.columns);
+  }, [value, cursorOffset, stdout.columns]);
 
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.idle;
 
@@ -58,7 +125,7 @@ export function InputBar({
           <Text color={C.primary} >{'>'}</Text>
         </Box>
         <Box flexDirection="column" marginLeft={1} flexGrow={1}>
-          {lines.length === 0 ? (
+          {displayLines.length === 0 ? (
             <Box>
               <Text backgroundColor={C.primary}>
                 {' '}
@@ -66,19 +133,19 @@ export function InputBar({
               {placeholder && <Text dimColor>{placeholder}</Text>}
             </Box>
           ) : (
-            lines.map((line, lineIdx) => (
+            displayLines.map((line, lineIdx) => (
               <Box key={lineIdx}>
-                {lineIdx === cursorLine ? (
+                {lineIdx === cursorLineIdx ? (
                   <>
-                    {cursorCol > 0 && <Text>{line.substring(0, cursorCol)}</Text>}
+                    {cursorColIdx > 0 && <Text>{line.substring(0, cursorColIdx)}</Text>}
                     <Text
                       backgroundColor={C.primary}
                       key={`cursor-${lineIdx}`}
                     >
-                      {line[cursorCol] || ' '}
+                      {line[cursorColIdx] || ' '}
                     </Text>
-                    {cursorCol < line.length && (
-                      <Text>{line.substring(cursorCol + 1)}</Text>
+                    {cursorColIdx < line.length && (
+                      <Text>{line.substring(cursorColIdx + 1)}</Text>
                     )}
                   </>
                 ) : (
