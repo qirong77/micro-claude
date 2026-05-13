@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Box, Static, Text } from "ink";
 import type Anthropic from "@anthropic-ai/sdk";
 import { C } from "../data.js";
@@ -12,10 +12,6 @@ function flattenContent(content: Anthropic.MessageParam["content"]): string[] {
         switch (block.type) {
             case "text":
                 return block.text.split("\n").filter((l) => l.length > 0);
-            // case "tool_use":
-            //     return [`🔧 Tool call: ${block.name}`];
-            // case "tool_result":
-            //     return typeof block.content === "string" ? [`📋 Tool result:\n${block.content.slice(0, 200)}`] : [`📋 Tool result`];
             default:
                 return [];
         }
@@ -25,9 +21,9 @@ function flattenContent(content: Anthropic.MessageParam["content"]): string[] {
 export const LogArea = ({ messages }: { messages: Anthropic.MessageParam[] }): React.ReactNode => {
     if (messages.length === 0) return null;
 
-    // 分离已完成的 messages 和最后一个（可能正在流式更新的）message
+    // 最后一个 message 可能正在流式更新，用动态 Box 渲染
     const lastIdx = messages.length - 1;
-    const completedMessages = messages.slice(0, lastIdx + 10);
+    const completedMessages = messages.slice(0, lastIdx);
     const lastMessage = messages[lastIdx];
 
     let globalLineIndex = 0;
@@ -39,61 +35,38 @@ export const LogArea = ({ messages }: { messages: Anthropic.MessageParam[] }): R
         });
     });
 
-    // 最后一个 message 的行 —— 可能是流式更新中的，用普通 Box 渲染以支持实时更新
+    // 最后一个 message 的行
     const lastLines = flattenContent(lastMessage.content).map((line, i) => {
-        const id = line;
-        return { id, role: lastMessage.role, text: line };
+        return { id: `last-${i}`, role: lastMessage.role, text: line };
     });
+
+    // 渲染单条消息（用于复用）
+    const renderMessageBlock = useCallback((role: string, text: string, key: string) => {
+        if (role === "user") {
+            return (
+                <Box key={key} paddingX={1} paddingY={1} flexDirection="row">
+                    <Text color={C.primary}>▌</Text>
+                    <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
+                        <Text bold color={C.primary}>
+                            {text}
+                        </Text>
+                    </Box>
+                </Box>
+            );
+        }
+        return (
+            <Box key={key} paddingX={1}>
+                <Text>{text}</Text>
+            </Box>
+        );
+    }, []);
+
     return (
         <Box flexDirection="column">
-            <Static items={completedLines}>
-                {(item) => {
-                    if (item.role === "user") {
-                        return (
-                            <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
-                                <Text color={C.primary}>▌</Text>
-                                <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
-                                    <Text bold color={C.primary}>
-                                        {item.text}
-                                    </Text>
-                                </Box>
-                            </Box>
-                        );
-                    }
-                    return (
-                        <Box key={item.id} paddingX={1}>
-                            <Text>{item.text}</Text>
-                        </Box>
-                    );
-                }}
-            </Static>
-            <Static items={lastLines}>
-                {(item) => {
-                    return <Text key={item.text}>
-                            {item.text}
-                        </Text>
-                }}
-            </Static>
+            {/* 已完成的 messages 用 Static 渲染 */}
+            <Static items={completedLines}>{(item) => renderMessageBlock(item.role, item.text, item.id)}</Static>
             {/* 最后一个 message 用动态 Box 渲染，支持流式更新 */}
-            {lastLines.map((item) => {
-                if (item.role === "user") {
-                    return (
-                        <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
-                            <Text color={C.primary}>▌</Text>
-                            <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
-                                <Text bold color={C.primary}>
-                                    {item.text}
-                                </Text>
-                            </Box>
-                        </Box>
-                    );
-                }
-                return (
-                    <Box key={item.id} paddingX={1}>
-                        <Text>{item.text}</Text>
-                    </Box>
-                );
-            })}
+            {lastLines.map((item) => renderMessageBlock(item.role, item.text, item.id))}
         </Box>
     );
 };

@@ -7,6 +7,10 @@ ui.onUserSubmit(async (text) => {
     let activeToolStatuses: Array<{ id: string; text: string }> = [];
     // 当前轮流式文本累积
     let streamingText = "";
+    MicaAgent.ui.setState({
+        messages: [...agentTurn.messages, { role: "user", content: text }],
+        isLoading: true,
+    });
 
     await agentTurn.run(text, {
         onText(chunk) {
@@ -29,7 +33,7 @@ ui.onUserSubmit(async (text) => {
                 statuses: activeToolStatuses,
             });
         },
-        onToolResult(id) {
+        onToolResult(id, _name, _result) {
             activeToolStatuses = activeToolStatuses.filter((s) => s.id !== id);
             MicaAgent.ui.setState({
                 messages: [...agentTurn.messages],
