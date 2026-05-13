@@ -2,7 +2,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, modelAtom, inputBarStatusAtom } from '../../store';
+import { messagesAtom, modelAtom, maxTokensAtom, inputBarStatusAtom } from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 
@@ -39,7 +39,7 @@ class AgentTurn {
 
     const stream = getClient().messages.stream({
       model: modelAtom.get(),
-      max_tokens: 2048,
+      max_tokens: maxTokensAtom.get(),
       system: systemPrompt,
       messages,
       tools: toolDefinitions,

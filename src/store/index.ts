@@ -16,6 +16,7 @@ export const cacheDir = resolve(homedir(), '.mica');
 export const baseUrlAtom = atom(process.env.ANTHROPIC_BASE_URL);
 export const apiKeyAtom = atom(process.env.ANTHROPIC_API_KEY);
 export const modelAtom = atom(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6');
+export const maxTokensAtom = atom(Number(process.env.ANTHROPIC_MAX_TOKENS) || 8192);
 
 
 export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
