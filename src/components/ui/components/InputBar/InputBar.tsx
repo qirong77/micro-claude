@@ -45,7 +45,10 @@ export function InputBar({
         <Box flexDirection="column" marginLeft={1}>
           {lines.length === 0 ? (
             <Box>
-              <Text dimColor>{placeholder || ''}</Text>
+              <Text backgroundColor={C.primary}>
+                {' '}
+              </Text>
+              {placeholder && <Text dimColor>{placeholder}</Text>}
             </Box>
           ) : (
             lines.map((line, lineIdx) => (
