@@ -20,7 +20,7 @@ export function MarkdownRenderByLine(props: { text: string }) {
     return (
       <Box flexDirection="row" width="100%">
         {cells.map((cell, i) => (
-          <Box key={i} flexGrow={1} paddingLeft={1} paddingRight={1}>
+          <Box key={i} flexGrow={1} flexBasis={0} overflow="hidden" paddingLeft={1} paddingRight={1}>
             <Text bold={isHeader} wrap="truncate">{cell}</Text>
           </Box>
         ))}
