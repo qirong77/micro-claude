@@ -1,4 +1,4 @@
-import { Box, render, Text, useApp, useInput, usePaste } from 'ink';
+import { Box, render, Text, useApp, useInput, usePaste, useStdout } from 'ink';
 import React, { useMemo, useRef, useState } from 'react';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -7,6 +7,7 @@ import { useSchedulState } from '../hooks';
 import { inputBarStatusAtom } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
+import stringWidth from 'string-width';
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
 const MAX_HISTORY = 100;
@@ -30,8 +31,6 @@ function saveHistory(history: string[]) {
     // silently ignore disk errors
   }
 }
-
-
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,18 +62,146 @@ function rowStart(lines: string[], row: number): number {
   return start;
 }
 
+// ─── Soft-wrap helpers (cursor must follow terminal wrapping) ─────────────────
+//
+// Ink wraps long <Text> runs at the terminal width. This component renders a
+// "block cursor" by splitting the current visual line into before/at/after.
+// If we only split by '\n', the cursor row/col becomes wrong once the text
+// wraps automatically (no manual newline). We therefore compute cursorRow/col
+// in *visual rows* based on terminal columns, similar to claude-code's Cursor.
+
+type VisualRow = { start: number; end: number; text: string };
+
+let _graphemeSeg: Intl.Segmenter | null | undefined;
+function getGraphemeSegmenter(): Intl.Segmenter | null {
+  if (_graphemeSeg !== undefined) return _graphemeSeg ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  _graphemeSeg =
+    typeof Intl !== 'undefined' && 'Segmenter' in Intl
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        new (Intl as any).Segmenter(undefined, { granularity: 'grapheme' })
+      : null;
+  return _graphemeSeg ?? null;
+}
+
+function buildVisualRows(text: string, columns: number): VisualRow[] {
+  const seg = getGraphemeSegmenter();
+  const rows: VisualRow[] = [];
+  const maxCols = Math.max(1, columns);
+
+  let rowStartOffset = 0;
+  let rowWidth = 0;
+
+  const pushRow = (end: number) => {
+    rows.push({ start: rowStartOffset, end, text: text.slice(rowStartOffset, end) });
+    rowStartOffset = end;
+    rowWidth = 0;
+  };
+
+  if (text.length === 0) return [{ start: 0, end: 0, text: '' }];
+
+  if (!seg) {
+    // Fallback: code units.
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]!;
+      if (ch === '\n') {
+        pushRow(i);
+        rowStartOffset = i + 1;
+        continue;
+      }
+      const w = stringWidth(ch);
+      if (rowWidth + w > maxCols && rowWidth > 0) pushRow(i);
+      rowWidth += w;
+    }
+    rows.push({ start: rowStartOffset, end: text.length, text: text.slice(rowStartOffset) });
+    return rows;
+  }
+
+  for (const part of seg.segment(text)) {
+    const s = part.segment;
+    const idx = part.index;
+    if (s === '\n') {
+      pushRow(idx);
+      rowStartOffset = idx + 1;
+      continue;
+    }
+    const w = stringWidth(s);
+    if (rowWidth + w > maxCols && rowWidth > 0) pushRow(idx);
+    rowWidth += w;
+  }
+
+  rows.push({ start: rowStartOffset, end: text.length, text: text.slice(rowStartOffset) });
+  return rows;
+}
+
+function visualPosFromOffset(rows: VisualRow[], offset: number): { row: number; col: number } {
+  if (rows.length === 0) return { row: 0, col: 0 };
+  const lastEnd = rows[rows.length - 1]!.end;
+  const clamped = Math.max(0, Math.min(offset, lastEnd));
+
+  // First row where clamped <= end
+  let lo = 0;
+  let hi = rows.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (clamped <= rows[mid]!.end) hi = mid;
+    else lo = mid + 1;
+  }
+  const r = rows[lo]!;
+  const rel = Math.max(0, Math.min(clamped - r.start, r.text.length));
+  return { row: lo, col: stringWidth(r.text.slice(0, rel)) };
+}
+
+function offsetFromVisualPos(rows: VisualRow[], row: number, col: number): number {
+  if (rows.length === 0) return 0;
+  const r = rows[Math.max(0, Math.min(row, rows.length - 1))]!;
+  const target = Math.max(0, col);
+  const seg = getGraphemeSegmenter();
+
+  if (!seg) {
+    let w = 0;
+    for (let i = 0; i < r.text.length; i++) {
+      const ch = r.text[i]!;
+      const cw = stringWidth(ch);
+      if (w + cw > target) return r.start + i;
+      w += cw;
+    }
+    return r.end;
+  }
+
+  let w = 0;
+  let last = 0;
+  for (const part of seg.segment(r.text)) {
+    const s = part.segment;
+    const idx = part.index;
+    const cw = stringWidth(s);
+    if (w + cw > target) return r.start + last;
+    w += cw;
+    last = idx + s.length;
+  }
+  return r.end;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TerminalInput(props: {
   onSubmit: (value: string) => void;
   commands: readonly Command[];
 }) {
+  const { stdout } = useStdout();
   const [{ value, cursor }, setState] = useState<InputState>({
     value: '',
     cursor: 0,
   });
-  const [HistoryInputs,setHistoryInputs] = useState(loadHistory());
-  const status = useSchedulState(inputBarStatusAtom)
+  const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
+  const status = useSchedulState(inputBarStatusAtom);
+  const promptGlyph = '❯\u00A0';
+  const totalCols = stdout?.columns ?? 80;
+  const inputCols = Math.max(1, totalCols - stringWidth(promptGlyph));
+  // Leave one column for the inverse "block cursor" so it doesn't trigger an extra wrap.
+  const wrapCols = Math.max(1, inputCols - 1);
+  const visualRows = useMemo(() => buildVisualRows(value, wrapCols), [value, wrapCols]);
+  const cursorVisual = useMemo(() => visualPosFromOffset(visualRows, cursor), [visualRows, cursor]);
 
   // ── Slash-command dropdown state ──────────────────────────────────────────
   // selectedCommandIndex: 0-based index into filteredCommands; -1 means no selection
@@ -92,9 +219,7 @@ export function TerminalInput(props: {
     if (!slashFilter && slashFilter !== '') return [];
     // If slashFilter is empty string (user typed just `/`), show all commands
     const filter = slashFilter.toLowerCase();
-    return props.commands.filter((cmd) =>
-      cmd.name.toLowerCase().includes(filter)
-    );
+    return props.commands.filter((cmd) => cmd.name.toLowerCase().includes(filter));
   }, [props.commands, slashFilter]);
 
   // Whether the dropdown should be visible
@@ -162,7 +287,11 @@ export function TerminalInput(props: {
         });
       }
       // ── If a command is selected in the dropdown, execute it instead ────
-      if (showCommandDropdown && selectedCommandIndex >= 0 && selectedCommandIndex < filteredCommands.length) {
+      if (
+        showCommandDropdown &&
+        selectedCommandIndex >= 0 &&
+        selectedCommandIndex < filteredCommands.length
+      ) {
         const cmd = filteredCommands[selectedCommandIndex];
         if (cmd) {
           // Extract argument after the command name (e.g. "/log foo" → arg = "foo")
@@ -254,21 +383,19 @@ export function TerminalInput(props: {
         return;
       }
 
-      const [row, col] = toRowCol(value, cursor);
+      const { row, col } = visualPosFromOffset(buildVisualRows(value, wrapCols), cursor);
 
       if (row > 0) {
-        // Move cursor up within multi-line text.
+        // Move cursor up within the visual wrapped rows.
         setState(({ value: v, cursor: c }) => {
-          const [r, co] = toRowCol(v, c);
-          const lines = v.split('\n');
-          const start = rowStart(lines, r - 1);
-          const len = lines[r - 1]?.length ?? 0;
-          return { value: v, cursor: start + Math.min(co, len) };
+          const rows = buildVisualRows(v, wrapCols);
+          const p = visualPosFromOffset(rows, c);
+          return { value: v, cursor: offsetFromVisualPos(rows, p.row - 1, p.col) };
         });
         return;
       }
 
-      // Cursor is on the first logical line → history navigation.
+      // Cursor is on the first visual line → history navigation.
       // Read & increment the ref synchronously so rapid presses each target a
       // distinct slot even if React hasn't committed the previous render yet.
       const targetIdx = historyIndexRef.current; // slot to load (0-based into HistoryInputs)
@@ -305,29 +432,26 @@ export function TerminalInput(props: {
       const curHistIdx = historyIndexRef.current;
 
       if (curHistIdx === 0) {
-        // Not browsing history → plain cursor-down within the value.
+        // Not browsing history → plain cursor-down within the visual wrapped rows.
         setState(({ value: v, cursor: c }) => {
-          const lines = v.split('\n');
-          const [row, col] = toRowCol(v, c);
-          if (row >= lines.length - 1) return { value: v, cursor: c };
-          const start = rowStart(lines, row + 1);
-          const len = lines[row + 1]?.length ?? 0;
-          return { value: v, cursor: start + Math.min(col, len) };
+          const rows = buildVisualRows(v, wrapCols);
+          const p = visualPosFromOffset(rows, c);
+          if (p.row >= rows.length - 1) return { value: v, cursor: c };
+          return { value: v, cursor: offsetFromVisualPos(rows, p.row + 1, p.col) };
         });
         return;
       }
 
       // We're inside a history entry.  If the cursor is not yet on the last
-      // logical line of that entry, move it down within the entry first.
-      const [row] = toRowCol(value, cursor);
-      const entryLines = value.split('\n');
-      if (row < entryLines.length - 1) {
+      // visual line of that entry, move it down within the entry first.
+      const rowsNow = buildVisualRows(value, wrapCols);
+      const pNow = visualPosFromOffset(rowsNow, cursor);
+      if (pNow.row < rowsNow.length - 1) {
         setState(({ value: v, cursor: c }) => {
-          const lines = v.split('\n');
-          const [r, co] = toRowCol(v, c);
-          const start = rowStart(lines, r + 1);
-          const len = lines[r + 1]?.length ?? 0;
-          return { value: v, cursor: start + Math.min(co, len) };
+          const rows = buildVisualRows(v, wrapCols);
+          const p = visualPosFromOffset(rows, c);
+          if (p.row >= rows.length - 1) return { value: v, cursor: c };
+          return { value: v, cursor: offsetFromVisualPos(rows, p.row + 1, p.col) };
         });
         return;
       }
@@ -355,18 +479,18 @@ export function TerminalInput(props: {
     // ── Home / End ────────────────────────────────────────────────────────────
     if (key.home) {
       setState(({ value: v, cursor: c }) => {
-        const [row] = toRowCol(v, c);
-        return { value: v, cursor: rowStart(v.split('\n'), row) };
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        return { value: v, cursor: rows[p.row]!.start };
       });
       return;
     }
 
     if (key.end) {
       setState(({ value: v, cursor: c }) => {
-        const lines = v.split('\n');
-        const [row] = toRowCol(v, c);
-        const start = rowStart(lines, row);
-        return { value: v, cursor: start + (lines[row]?.length ?? 0) };
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        return { value: v, cursor: rows[p.row]!.end };
       });
       return;
     }
@@ -375,8 +499,9 @@ export function TerminalInput(props: {
     // Ctrl+A → start of line
     if (key.ctrl && ch === 'a') {
       setState(({ value: v, cursor: c }) => {
-        const [row] = toRowCol(v, c);
-        return { value: v, cursor: rowStart(v.split('\n'), row) };
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        return { value: v, cursor: rows[p.row]!.start };
       });
       return;
     }
@@ -384,10 +509,9 @@ export function TerminalInput(props: {
     // Ctrl+E → end of line
     if (key.ctrl && ch === 'e') {
       setState(({ value: v, cursor: c }) => {
-        const lines = v.split('\n');
-        const [row] = toRowCol(v, c);
-        const start = rowStart(lines, row);
-        return { value: v, cursor: start + (lines[row]?.length ?? 0) };
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        return { value: v, cursor: rows[p.row]!.end };
       });
       return;
     }
@@ -395,8 +519,9 @@ export function TerminalInput(props: {
     // Ctrl+U → delete to start of line
     if (key.ctrl && ch === 'u') {
       setState(({ value: v, cursor: c }) => {
-        const [row] = toRowCol(v, c);
-        const start = rowStart(v.split('\n'), row);
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        const start = rows[p.row]!.start;
         return { value: v.slice(0, start) + v.slice(c), cursor: start };
       });
       return;
@@ -405,10 +530,10 @@ export function TerminalInput(props: {
     // Ctrl+K → delete to end of line
     if (key.ctrl && ch === 'k') {
       setState(({ value: v, cursor: c }) => {
-        const lines = v.split('\n');
-        const [row] = toRowCol(v, c);
-        const lineEnd = rowStart(lines, row) + (lines[row]?.length ?? 0);
-        return { value: v.slice(0, c) + v.slice(lineEnd), cursor: c };
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        const end = rows[p.row]!.end;
+        return { value: v.slice(0, c) + v.slice(end), cursor: c };
       });
       return;
     }
@@ -460,8 +585,8 @@ export function TerminalInput(props: {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const lines = value.split('\n');
-  const [cursorRow, cursorCol] = toRowCol(value, cursor);
+  const lines = visualRows.map((r) => r.text);
+  const cursorRow = cursorVisual.row;
 
   // Only pass visible commands to CommandDropdown
   const visibleCommands = showCommandDropdown ? filteredCommands : [];
@@ -483,7 +608,7 @@ export function TerminalInput(props: {
         alignItems="flex-start"
       >
         {/* Prompt glyph — mirrors PromptInputModeIndicator's ❯\u00A0 */}
-        <Text color={C.primary}>{'❯\u00A0'}</Text>
+        <Text color={C.primary}>{promptGlyph}</Text>
 
         {/* Multi-line text area */}
         <Box flexDirection="column" flexGrow={1} flexShrink={1}>
@@ -499,9 +624,11 @@ export function TerminalInput(props: {
             }
 
             // Cursor row: split into before / cursor-char / after
-            const before = line.slice(0, cursorCol);
-            const at = line[cursorCol] ?? ' '; // fallback space = block cursor at EOL
-            const after = cursorCol < line.length ? line.slice(cursorCol + 1) : '';
+            const vr = visualRows[idx]!;
+            const rel = Math.max(0, Math.min(cursor - vr.start, line.length));
+            const before = line.slice(0, rel);
+            const at = line[rel] ?? ' '; // fallback space = block cursor at EOL
+            const after = rel < line.length ? line.slice(rel + 1) : '';
 
             return (
               <Box key={idx} flexDirection="row">
@@ -523,7 +650,7 @@ export function TerminalInput(props: {
         />
       )}
 
-      <Box paddingX={2} flexDirection='row-reverse'>
+      <Box paddingX={2} flexDirection="row-reverse">
         <Text dimColor>{status}</Text>
       </Box>
     </Box>
