@@ -1,10 +1,8 @@
 import React from 'react';
-import { Box, Static, Text } from 'ink';
+import { Box, Text, useStdout } from 'ink';
 import type Anthropic from '@anthropic-ai/sdk';
-import { C } from '../data.js';
 import { messagesAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
-import { MarkdownRenderByLine, classifyLine, type BlockType } from './MarkdownRenderByLine.js';
 
 // ── LogArea 内部使用的消息类型 ────────────────────────────
 // Anthropic.MessageParam 不包含 status 字段，但我们需要在 UI 中区分流式消息
@@ -23,20 +21,27 @@ function getTextContent(content: Anthropic.MessageParam['content']): string {
     .join('\n');
 }
 
-// 用于 <Static> 的条目类型
+// 日志条目类型
 interface LogItem {
   id: string | number;
   role: 'user' | 'assistant';
   text: string;
 }
 
+// ANSI 颜色 — 与 data.ts 中 C.primary 对应 (#4a9eff)
+const primaryAnsi = '\x1b[38;2;74;158;255m';
+const bold = '\x1b[1m';
+const reset = '\x1b[0m';
+
 export const LogArea = (): React.ReactNode => {
+  const { write } = useStdout();
   const [lastLineText, setLastLineText] = React.useState('');
+  const writtenCountRef = React.useRef(0);
 
   // 从流式 assistant 消息中提取最后的不完整行
   let nextLastLine = '';
   const messages = useSchedulState(messagesAtom);
-  const staticItems = messages.flatMap((raw, i): LogItem[] => {
+  const logItems = messages.flatMap((raw, i): LogItem[] => {
     const msg = raw as LogMessage;
     let text = getTextContent(msg.content);
     if (!text) return [];
@@ -71,43 +76,35 @@ export const LogArea = (): React.ReactNode => {
       return lines;
     }
     return [];
-  }) satisfies LogItem[];
+  });
+
+  // 完成的消息直接写入 stdout，进入终端滚动缓冲区，Ink 的 write
+  // 会安全地协调（log.clear → 写入 → restoreLastOutput），不会破坏 Ink 的帧管理
+  React.useEffect(() => {
+    const newItems = logItems.slice(writtenCountRef.current);
+    if (newItems.length === 0) return;
+    writtenCountRef.current = logItems.length;
+
+    const lines: string[] = [];
+    for (const item of newItems) {
+      if (item.role === 'user') {
+        lines.push(`${bold}${primaryAnsi}▌ ${item.text}${reset}`);
+      } else {
+        lines.push(item.text);
+      }
+    }
+    write(lines.join('\n') + '\n');
+  }, [logItems, write]);
 
   // 同步 state，确保 Ink 能正确检测到变化并重渲染
   if (lastLineText !== nextLastLine) {
     setLastLineText(nextLastLine);
   }
 
-  // Precompute block types for all assistant lines to enable context-aware margins
-  const assistantLines = staticItems.filter((it) => it.role === 'assistant');
-  const blockTypes: BlockType[] = assistantLines.map((it) => classifyLine(it.text));
-  return (
-    <Box flexDirection="column">
-      <Static items={staticItems}>
-        {(item: LogItem) => {
-          if (item.role === 'user') {
-            return (
-              <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
-                <Text color={C.primary}>▌</Text>
-                <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
-                  <Text bold color={C.primary}>
-                    {item.text}
-                  </Text>
-                </Box>
-              </Box>
-            );
-          }
-          const idx = assistantLines.findIndex((l) => l.id === item.id);
-          const prevType = idx > 0 ? blockTypes[idx - 1] : undefined;
-          const nextType = idx < blockTypes.length - 1 ? blockTypes[idx + 1] : undefined;
-          return (
-            <Box key={item.id}>
-              <MarkdownRenderByLine text={item.text} prevType={prevType} nextType={nextType} />
-            </Box>
-          );
-        }}
-      </Static>
-      {lastLineText ? <Text>{lastLineText}</Text> : null}
+  // Live 区域：只渲染流式文本，确保 Ink frame 不会溢出终端高度
+  return lastLineText ? (
+    <Box>
+      <Text>{lastLineText}</Text>
     </Box>
-  );
+  ) : null;
 };
