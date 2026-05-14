@@ -244,8 +244,9 @@ export function TerminalInput(props: {
 
     // ── Dropdown: confirm selection on Enter ───────────────────────────────
     if (dd.visible && key.return && !key.shift && !key.meta) {
-      const items = dd.items;
-      const idx = dd.selectedIndex;
+      const filter = inputValueAtom.get().toLowerCase();
+      const items = filter ? dd.items.filter((i) => i.label.toLowerCase().includes(filter)) : dd.items;
+      const idx = dd.selectedIndex >= items.length ? items.length - 1 : dd.selectedIndex;
       if (idx >= 0 && idx < items.length) {
         dropdownSelectionAtom.set(items[idx]!);
       }
@@ -261,7 +262,8 @@ export function TerminalInput(props: {
 
     // ── Dropdown: up/down navigation ───────────────────────────────────────
     if (dd.visible) {
-      const items = dd.items;
+      const filter = inputValueAtom.get().toLowerCase();
+      const items = filter ? dd.items.filter((i) => i.label.toLowerCase().includes(filter)) : dd.items;
       if (key.upArrow) {
         dropdownAtom.set({
           ...dd,
