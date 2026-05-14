@@ -1,6 +1,10 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { C } from '../data';
+
+const primary = '#4a9eff';
+const codeText = '#69abf7';
+const heading = primary;
+const dim = '#888';
 
 let seenTableSeparator = false;
 
@@ -17,7 +21,7 @@ function renderInline(text: string) {
     if (match[1] !== undefined) {
       segments.push(<Text bold key={segments.length}>{match[1]}</Text>);
     } else if (match[2] !== undefined) {
-      segments.push(<Text backgroundColor="#333" color="#e6db74" key={segments.length}>{match[2]}</Text>);
+      segments.push(<Text color={codeText} key={segments.length}>{match[2]}</Text>);
     }
     lastIndex = regex.lastIndex;
   }
@@ -60,7 +64,7 @@ export function MarkdownRenderByLine(props: { text: string }) {
   if (text.startsWith('#')) {
     return (
       <Box marginY={1}>
-        <Text color={C.cyan} bold>{renderInline(text)}</Text>
+        <Text color={heading} bold>{renderInline(text)}</Text>
       </Box>
     );
   }

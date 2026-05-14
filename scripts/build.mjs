@@ -6,7 +6,7 @@ await esbuild.build({
   platform: 'node',
   target: 'node18',
   format: 'esm',
-  banner: { js: '#!/usr/bin/env node' },
+  banner: { js: '#!/usr/bin/env -S node --no-warnings' },
   outfile: './dist/bin/index.js',
   packages: 'external',
   external: ['react-devtools-core'],
