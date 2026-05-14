@@ -46,7 +46,7 @@ export function InputStatus() {
       <Box flexGrow={1} flexShrink={1}>
         {content}
       </Box>
-      <Box flexShrink={0}>
+      <Box flexShrink={0} paddingRight={4}>
         <Text color={C.dim} wrap="wrap">
           {model} · {effort}
         </Text>
