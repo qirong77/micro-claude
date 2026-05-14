@@ -12,7 +12,7 @@ export const ToolCallList = React.memo(function ToolCallList(): React.ReactNode 
   const displayed = sorted.slice(0, 3);
 
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box flexDirection="column">
       {displayed.map((tc) => (
         <Box key={tc.id}>
           <Text dimColor>{tc.displayText}</Text>
