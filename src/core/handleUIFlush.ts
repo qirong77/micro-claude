@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { agentTurn } from '../components/agent/agentTurn';
-import { messagesAtom, statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom } from '../store';
+import { messagesAtom, statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
 import { getToolDisplayText } from '../components/tools';
 import { uuid } from '../utils/uuid';
 
@@ -20,6 +20,7 @@ export function handleToolUseState() {
     // 当有工具调用时，更新 InputBar 状态
     if (!completed) {
       inputBarStatusAtom.set('calling_tool');
+      inputBarInfoAtom.set({ type: 'calling_tool' });
     }
     
     if (idx !== -1) {
@@ -45,6 +46,7 @@ export function handleThinking() {
       // 当有思考文本时，保持在 thinking 状态
       if (inputBarStatusAtom.get() !== 'calling_tool') {
         inputBarStatusAtom.set('thinking');
+        inputBarInfoAtom.set({ type: 'thinking' });
       }
     });
   });

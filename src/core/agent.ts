@@ -1,21 +1,28 @@
 import { agentTurn } from '../components/agent/agentTurn';
 import { ui } from '../components/ui';
-import { statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom } from '../store';
+import { statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
 import { handleToolUseState, handleStreamText, handleThinking } from './handleUIFlush';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 
 // ── 用户提交入口 ──
 ui.onUserSubmit(async (text) => {
+  const startTime = Date.now();
   try {
     inputBarStatusAtom.set('thinking');
+    inputBarInfoAtom.set({ type: 'thinking' });
     await agentTurn.run(text, () => {
       statusesAtom.set([]);
       thinkingTextAtom.set('');
     });
     inputBarStatusAtom.set('completed');
+    inputBarInfoAtom.set({ type: 'completed', elapsedMs: Date.now() - startTime });
     // 完成状态保留 500ms 后回到 idle
   } catch (error) {
     inputBarStatusAtom.set('error');
+    inputBarInfoAtom.set({
+      type: 'error',
+      message: error instanceof Error ? error.message : String(error),
+    });
     console.error('Agent error:', error);
   }
 });

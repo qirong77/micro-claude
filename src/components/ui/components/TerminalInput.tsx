@@ -4,10 +4,20 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { useSchedulState } from '../hooks';
-import { inputBarStatusAtom } from '../../../store';
+import { inputBarInfoAtom, type InputBarInfo } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
 import stringWidth from 'string-width';
+
+/** 格式化毫秒为可读时长 */
+function formatElapsed(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const s = (ms / 1000).toFixed(1);
+  if (ms < 60000) return `${s}s`;
+  const m = Math.floor(ms / 60000);
+  const sec = ((ms % 60000) / 1000).toFixed(0);
+  return `${m}m ${sec}s`;
+}
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
 const MAX_HISTORY = 100;
@@ -194,7 +204,7 @@ export function TerminalInput(props: {
     cursor: 0,
   });
   const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
-  const status = useSchedulState(inputBarStatusAtom);
+  const info = useSchedulState(inputBarInfoAtom);
   const promptGlyph = '❯\u00A0';
   const totalCols = stdout?.columns ?? 80;
   const inputCols = Math.max(1, totalCols - stringWidth(promptGlyph));
@@ -650,9 +660,19 @@ export function TerminalInput(props: {
         />
       )}
 
-      <Box paddingX={2} flexDirection="row-reverse">
-        <Text dimColor>{status}</Text>
-      </Box>
+      {/* 状态栏：仅展示 error 和 completed，用颜色区分 */}
+      {info.type === 'error' && (
+        <Box paddingX={2} flexDirection="row-reverse">
+          <Text color={C.error}>✗ {info.message ?? '出错了'}</Text>
+        </Box>
+      )}
+      {info.type === 'completed' && (
+        <Box paddingX={2} flexDirection="row-reverse">
+          <Text color={C.success}>
+            ✓ 完成{info.elapsedMs != null ? ` · ${formatElapsed(info.elapsedMs)}` : ''}
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }

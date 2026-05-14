@@ -42,6 +42,14 @@ export const toolCallsAtom = atom<
   }>
 >([]);
 
-/** InputBar 右侧状态动画 */
+/** InputBar 右侧状态动画（内部状态机） */
 export type InputBarStatus = 'idle' | 'thinking' | 'calling_tool' | 'completed' | 'error';
+/** InputBar 展示信息（驱动 UI 渲染） */
+export type InputBarInfo =
+  | { type: 'idle' }
+  | { type: 'thinking' }
+  | { type: 'calling_tool' }
+  | { type: 'completed'; elapsedMs?: number }
+  | { type: 'error'; message?: string };
 export const inputBarStatusAtom = atom<InputBarStatus>('idle');
+export const inputBarInfoAtom = atom<InputBarInfo>({ type: 'idle' });

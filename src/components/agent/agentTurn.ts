@@ -2,7 +2,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, modelAtom, maxTokensAtom, inputBarStatusAtom } from '../../store';
+import { messagesAtom, modelAtom, maxTokensAtom, inputBarStatusAtom, inputBarInfoAtom } from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 
@@ -88,6 +88,10 @@ class AgentTurn {
         // 如果工具执行失败，标记为错误状态
         if (r.status === 'rejected') {
           inputBarStatusAtom.set('error');
+          inputBarInfoAtom.set({
+            type: 'error',
+            message: r.reason instanceof Error ? r.reason.message : String(r.reason),
+          });
         }
       }
 
