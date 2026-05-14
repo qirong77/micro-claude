@@ -14,7 +14,8 @@ export class QuickCommandLogPlugin extends MicaPlugin {
       name: 'session-export',
       description: '导出会话记录到当前路径',
       action: async () => {
-        const messages = this.store.messages.get();
+        const rawMessages = this.store.messages.get();
+        const messages = rawMessages.filter((m: any) => m.status !== 'clear');
 
         if (messages.length === 0) {
           this.showStatus('没有会话记录可导出');

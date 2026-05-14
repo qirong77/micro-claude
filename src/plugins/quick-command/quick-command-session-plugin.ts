@@ -123,7 +123,8 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   private async _persistMessages(id: string, messages: readonly any[]) {
     await ensureDir();
     const filePath = resolve(SESSIONS_DIR, `${id}.json`);
-    await writeFile(filePath, JSON.stringify(messages, null, 2), 'utf-8');
+    const clean = messages.filter((m: any) => m.status !== 'clear');
+    await writeFile(filePath, JSON.stringify(clean, null, 2), 'utf-8');
   }
 
   private async _updateSessionTimestamp(id: string) {
@@ -166,6 +167,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
 
   private async _switchToSession(sessionId: string) {
     this._suppressAutoSave = true;
+    if (this._pendingAutoSave) clearTimeout(this._pendingAutoSave);
 
     const currentMessages = this.store.messages.get();
     if (currentMessages.length > 0) {
@@ -173,8 +175,6 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       await new Promise((r) => setTimeout(r, 16));
       messagesAtom.set([]);
     }
-
-    if (this._pendingAutoSave) clearTimeout(this._pendingAutoSave);
 
     const filePath = resolve(SESSIONS_DIR, `${sessionId}.json`);
     try {
