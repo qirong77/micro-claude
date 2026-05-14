@@ -23,7 +23,7 @@ export function App({
   return (
     <Box flexDirection="column" height="100%">
       <LogArea />
-      <TerminalInput onSubmit={onSubmit}/>
+      <TerminalInput onSubmit={onSubmit} commands={quickCommands}/>
       <StatusBar />
       <ToolCallList />
       <ThinkText />

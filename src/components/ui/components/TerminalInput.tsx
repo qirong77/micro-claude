@@ -1,10 +1,12 @@
 import { Box, render, Text, useApp, useInput, usePaste } from 'ink';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { useSchedulState } from '../hooks';
 import { inputBarStatusAtom } from '../../../store';
+import type { Command } from '../data.js';
+import { CommandDropdown } from './CommandDropdown.js';
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
 const MAX_HISTORY = 100;
@@ -63,13 +65,43 @@ function rowStart(lines: string[], row: number): number {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TerminalInput(props: { onSubmit: (value: string) => void }) {
+export function TerminalInput(props: {
+  onSubmit: (value: string) => void;
+  commands: readonly Command[];
+}) {
   const [{ value, cursor }, setState] = useState<InputState>({
     value: '',
     cursor: 0,
   });
   const [HistoryInputs,setHistoryInputs] = useState(loadHistory());
   const status = useSchedulState(inputBarStatusAtom)
+
+  // ── Slash-command dropdown state ──────────────────────────────────────────
+  // selectedCommandIndex: 0-based index into filteredCommands; -1 means no selection
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(-1);
+
+  // Detect if current input looks like a slash command: starts with / and only on first line
+  const slashFilter = useMemo(() => {
+    const firstLine = value.split('\n')[0] ?? '';
+    if (!firstLine.startsWith('/')) return '';
+    return firstLine.slice(1); // remove leading /
+  }, [value]);
+
+  // Filter commands matching the typed prefix (case-insensitive)
+  const filteredCommands = useMemo(() => {
+    if (!slashFilter && slashFilter !== '') return [];
+    // If slashFilter is empty string (user typed just `/`), show all commands
+    const filter = slashFilter.toLowerCase();
+    return props.commands.filter((cmd) =>
+      cmd.name.toLowerCase().includes(filter)
+    );
+  }, [props.commands, slashFilter]);
+
+  // Whether the dropdown should be visible
+  const showCommandDropdown = useMemo(() => {
+    const firstLine = value.split('\n')[0] ?? '';
+    return firstLine.startsWith('/');
+  }, [value]);
   // ── History navigation state ───────────────────────────────────────────────
   //
   // Mirrors useArrowKeyHistory in claude-code:
@@ -129,11 +161,28 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
           return clipped;
         });
       }
+      // ── If a command is selected in the dropdown, execute it instead ────
+      if (showCommandDropdown && selectedCommandIndex >= 0 && selectedCommandIndex < filteredCommands.length) {
+        const cmd = filteredCommands[selectedCommandIndex];
+        if (cmd) {
+          // Extract argument after the command name (e.g. "/log foo" → arg = "foo")
+          const firstLine = value.split('\n')[0] ?? '';
+          const arg = firstLine.slice(cmd.name.length + 1).trim(); // +1 for /
+          cmd.action(arg || undefined);
+        }
+        setState({ value: '', cursor: 0 });
+        setSelectedCommandIndex(-1);
+        historyIndexRef.current = 0;
+        draftRef.current = null;
+        return;
+      }
+
       props.onSubmit(value);
       setState({
         value: '',
         cursor: 0,
       });
+      setSelectedCommandIndex(-1);
       historyIndexRef.current = 0;
       draftRef.current = null;
       return;
@@ -150,6 +199,7 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
 
     // ── Escape → clear input + reset history position ────────────────────────
     if (key.escape) {
+      setSelectedCommandIndex(-1);
       historyIndexRef.current = 0;
       draftRef.current = null;
       setState({ value: '', cursor: 0 });
@@ -192,11 +242,18 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
     }
 
     // ── Up arrow ──────────────────────────────────────────────────────────────
-    // When cursor is NOT on the first logical line, move it up within the
-    // multi-line value (same as before).  When it IS on the first line, treat
-    // the key as "navigate to older history entry" — matching claude-code's
-    // upOrHistoryUp() which tries cursor movement first, then falls through.
+    // Priority: if command dropdown is visible, navigate dropdown selection up.
+    // Otherwise: move cursor up within multi-line text, then history navigation.
     if (key.upArrow) {
+      // ── Command dropdown navigation (up) ──────────────────────────────────
+      if (showCommandDropdown && filteredCommands.length > 0) {
+        setSelectedCommandIndex((prev) => {
+          if (prev <= 0) return filteredCommands.length - 1;
+          return prev - 1;
+        });
+        return;
+      }
+
       const [row, col] = toRowCol(value, cursor);
 
       if (row > 0) {
@@ -231,10 +288,20 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
     }
 
     // ── Down arrow ────────────────────────────────────────────────────────────
+    // Priority: if command dropdown is visible, navigate dropdown selection down.
     // Mirror of the Up logic: move cursor down within the value first; only
     // navigate towards newer history once the cursor is on the last logical
     // line (matching claude-code's downOrHistoryDown()).
     if (key.downArrow) {
+      // ── Command dropdown navigation (down) ────────────────────────────────
+      if (showCommandDropdown && filteredCommands.length > 0) {
+        setSelectedCommandIndex((prev) => {
+          if (prev >= filteredCommands.length - 1) return 0;
+          return prev + 1;
+        });
+        return;
+      }
+
       const curHistIdx = historyIndexRef.current;
 
       if (curHistIdx === 0) {
@@ -386,6 +453,8 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
         value: v.slice(0, c) + ch + v.slice(c),
         cursor: c + ch.length,
       }));
+      // Reset command selection when user types (filter may change)
+      setSelectedCommandIndex(0);
     }
   });
 
@@ -393,6 +462,9 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
 
   const lines = value.split('\n');
   const [cursorRow, cursorCol] = toRowCol(value, cursor);
+
+  // Only pass visible commands to CommandDropdown
+  const visibleCommands = showCommandDropdown ? filteredCommands : [];
 
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -441,6 +513,15 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
           })}
         </Box>
       </Box>
+
+      {/* Command dropdown — shown when user types / */}
+      {showCommandDropdown && (
+        <CommandDropdown
+          commands={visibleCommands}
+          selectedIndex={selectedCommandIndex >= 0 ? selectedCommandIndex : 0}
+          filter={slashFilter}
+        />
+      )}
 
       <Box paddingX={2} flexDirection='row-reverse'>
         <Text dimColor>{status}</Text>
