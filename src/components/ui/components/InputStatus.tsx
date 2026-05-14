@@ -23,7 +23,10 @@ export function InputStatus() {
     switch (info.type) {
       case 'thinking':
       case 'calling_tool':
-        return <Spin />;
+        return <Box>
+            <Spin />
+            <Text>{info.type}</Text>
+        </Box>;
       case 'error':
         return <Text color={C.error}>✗ {info.message}</Text>;
       case 'completed':

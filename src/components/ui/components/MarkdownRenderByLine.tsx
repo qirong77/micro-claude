@@ -4,9 +4,6 @@ import { Box, Text } from 'ink';
 const primary = '#4a9eff';
 const codeText = '#69abf7';
 const heading = primary;
-const dim = '#888';
-
-let seenTableSeparator = false;
 
 function renderInline(text: string) {
   const segments: React.ReactNode[] = [];
@@ -36,20 +33,46 @@ function renderInline(text: string) {
   return <Text>{segments}</Text>;
 }
 
-export function MarkdownRenderByLine(props: { text: string }) {
-  const { text } = props;
+export type BlockType = 'paragraph' | 'code' | 'table' | 'heading' | 'blockquote' | 'fence' | 'empty';
 
-  // Table row — equal-width columns
-  if (text.startsWith('|')) {
-    if (/^[\s|:\-]+$/.test(text)) {
-      seenTableSeparator = true;
-      return null;
-    }
+export function classifyLine(line: string): BlockType {
+  if (line.startsWith('```')) return 'fence';
+  if (line.startsWith('|')) return 'table';
+  if (line.startsWith('#')) return 'heading';
+  if (line.startsWith('> ')) return 'blockquote';
+  if (line.trim() === '') return 'empty';
+  return 'paragraph';
+}
+
+export function MarkdownRenderByLine(props: { text: string; prevType?: BlockType; nextType?: BlockType }) {
+  const { text, prevType, nextType } = props;
+  const type = classifyLine(text);
+
+  const hasBlockGap =
+    (type === 'fence' && prevType !== 'fence') ||
+    (prevType && prevType !== 'paragraph' && prevType !== 'empty' && prevType !== type) ||
+    (nextType && nextType !== 'paragraph' && nextType !== 'empty' && nextType !== type);
+
+  const marginTop = hasBlockGap ? 1 : 0;
+  const marginBottom = (type === 'fence' && text.trim() === '```') ? 1 : 0;
+
+  // Fence lines
+  if (type === 'fence') {
+    return (
+      <Box marginTop={marginTop} marginBottom={marginBottom}>
+        <Text dimColor>{text}</Text>
+      </Box>
+    );
+  }
+
+  // Table row
+  if (type === 'table') {
+    if (/^[\s|:\-]+$/.test(text)) return null;
     const cells = text.split('|').filter(Boolean).map(c => c.trim());
     if (cells.length === 0) return null;
-    const isHeader = !seenTableSeparator;
+    const isHeader = prevType !== 'table';
     return (
-      <Box flexDirection="row" width="100%" borderStyle="single" borderTop={isHeader}>
+      <Box marginTop={isHeader ? 1 : 0} marginBottom={0} flexDirection="row" width="100%">
         {cells.map((cell, i) => (
           <Box key={i} flexGrow={1} flexBasis={0} overflow="hidden" paddingLeft={1} paddingRight={1}>
             <Text bold={isHeader} wrap="truncate">{cell}</Text>
@@ -59,32 +82,28 @@ export function MarkdownRenderByLine(props: { text: string }) {
     );
   }
 
-  seenTableSeparator = false;
-
-  if (text.startsWith('#')) {
+  // Heading
+  if (type === 'heading') {
     return (
-      <Box marginY={1}>
+      <Box marginTop={1} marginBottom={0}>
         <Text color={heading} bold>{renderInline(text)}</Text>
       </Box>
     );
   }
 
-  if (text.startsWith('```')) {
+  // Blockquote
+  if (type === 'blockquote') {
     return (
-      <Box marginY={1}>
-        <Text dimColor>{text}</Text>
-      </Box>
-    );
-  }
-
-  if (text.startsWith('> ')) {
-    return (
-      <Box marginY={1}>
+      <Box>
         <Text dimColor>{renderInline(text)}</Text>
       </Box>
     );
   }
 
+  // Empty line — skip
+  if (type === 'empty') return null;
+
+  // Paragraph line
   return (
     <Box>
       {renderInline(text)}

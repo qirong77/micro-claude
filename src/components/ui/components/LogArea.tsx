@@ -4,7 +4,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { C } from '../data.js';
 import { messagesAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
-import { MarkdownRenderByLine } from './MarkdownRenderByLine.js';
+import { MarkdownRenderByLine, classifyLine, type BlockType } from './MarkdownRenderByLine.js';
 
 // ── LogArea 内部使用的消息类型 ────────────────────────────
 // Anthropic.MessageParam 不包含 status 字段，但我们需要在 UI 中区分流式消息
@@ -50,7 +50,7 @@ export const LogArea = (): React.ReactNode => {
       ];
     }
     if (msg.role === 'assistant') {
-      text = '🤖: ' + text
+      text = '🤖: \n' + text
       const lines: LogItem[] = text.split('\n').map((line, j) => ({
         id: `${i}-${j}`,
         role: msg.role as 'assistant',
@@ -72,6 +72,10 @@ export const LogArea = (): React.ReactNode => {
   if (lastLineText !== nextLastLine) {
     setLastLineText(nextLastLine);
   }
+
+  // Precompute block types for all assistant lines to enable context-aware margins
+  const assistantLines = staticItems.filter(it => it.role === 'assistant');
+  const blockTypes: BlockType[] = assistantLines.map(it => classifyLine(it.text));
   return (
     <Box flexDirection="column">
       <Static items={staticItems}>
@@ -88,9 +92,12 @@ export const LogArea = (): React.ReactNode => {
               </Box>
             );
           }
+          const idx = assistantLines.findIndex(l => l.id === item.id);
+          const prevType = idx > 0 ? blockTypes[idx - 1] : undefined;
+          const nextType = idx < blockTypes.length - 1 ? blockTypes[idx + 1] : undefined;
           return (
-            <Box key={item.id} paddingBottom={1}>
-              <MarkdownRenderByLine text={item.text} />
+            <Box key={item.id}>
+              <MarkdownRenderByLine text={item.text} prevType={prevType} nextType={nextType} />
             </Box>
           );
         }}
