@@ -7,7 +7,7 @@ import { useSpinner } from './common/Spin.js';
 
 export const ThinkText = React.memo(function ThinkText(): React.ReactNode {
   const text = useSchedulState(thinkingTextAtom);
-  const maxThinkLength = 200;
+  const maxThinkLength = 500;
   const spinner = useSpinner();
 
   if (text.length === 0) return null;

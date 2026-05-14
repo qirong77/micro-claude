@@ -663,12 +663,12 @@ export function TerminalInput(props: {
 
       {/* 状态栏：仅展示 error 和 completed，用颜色区分 */}
       {info.type === 'error' && (
-        <Box paddingX={2} flexDirection="row-reverse">
+        <Box paddingX={2} flexDirection="row">
           <Text color={C.error}>✗ {info.message ?? '出错了'}</Text>
         </Box>
       )}
       {info.type === 'completed' && (
-        <Box paddingX={2} flexDirection="row-reverse">
+        <Box paddingX={2} flexDirection="row">
           <Text color={C.success}>
             ✓ 完成{info.elapsedMs != null ? ` · ${formatElapsed(info.elapsedMs)}` : ''}
           </Text>
