@@ -243,7 +243,7 @@ export function TerminalInput(props: {
   //
   //   historyIndexRef  — synchronous counter so rapid Up/Down presses never
   //                      read a stale index from a not-yet-committed render.
-  //                      0 = draft, 1 = HistoryInputs[0], 2 = HistoryInputs[1] …
+  //                      0 = draft, 1 = most recent, 2 = second most recent …
   //
   //   draftRef         — snapshot of {value, cursor} taken the moment the user
   //                      first presses Up from index 0, so Down all the way
@@ -408,16 +408,18 @@ export function TerminalInput(props: {
       // Cursor is on the first visual line → history navigation.
       // Read & increment the ref synchronously so rapid presses each target a
       // distinct slot even if React hasn't committed the previous render yet.
-      const targetIdx = historyIndexRef.current; // slot to load (0-based into HistoryInputs)
+      const targetIdx = historyIndexRef.current; // 0 = draft, 1 = most recent …
 
       // First press: snapshot the draft so Down can restore it later.
       if (targetIdx === 0) {
         draftRef.current = { value, cursor };
       }
 
-      const entry = HistoryInputs[targetIdx];
-      if (entry === undefined) return; // already at the oldest entry, do nothing
+      const historyLen = HistoryInputs.length;
+      const historyIdx = historyLen - 1 - targetIdx; // reverse: newest first
+      if (historyIdx < 0) return; // already at the oldest entry, do nothing
 
+      const entry = HistoryInputs[historyIdx];
       historyIndexRef.current = targetIdx + 1;
       // Cursor goes to end of the entry (conventional shell behaviour).
       setState({ value: entry, cursor: entry.length });
@@ -469,8 +471,11 @@ export function TerminalInput(props: {
       // Cursor is on the last line of the history entry → go to a newer slot.
       if (curHistIdx > 1) {
         // Navigate one step towards the more recent end of the history list.
-        // Index N shows HistoryInputs[N-1], so the next newer entry is [N-2].
-        const newerEntry = HistoryInputs[curHistIdx - 2];
+        // curHistIdx=N shows HistoryInputs[historyLen - N], so the next newer
+        // entry is HistoryInputs[historyLen - N + 1].
+        const historyLen = HistoryInputs.length;
+        const newerIdx = historyLen - curHistIdx + 1;
+        const newerEntry = HistoryInputs[newerIdx];
         if (newerEntry !== undefined) {
           historyIndexRef.current = curHistIdx - 1;
           setState({ value: newerEntry, cursor: newerEntry.length });
