@@ -1,18 +1,19 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { agentTurn } from '../components/agent/agentTurn';
-import { messagesAtom, statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom } from '../store';
+import { messagesAtom, statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
 import { getToolDisplayText } from '../components/tools';
 import { uuid } from '../utils/uuid';
 
 export function handleToolUseState() {
   agentTurn.onStreamCreate((stream) => {
     stream.on('text', () => {
-      // 模型开始输出正文时清空工具调用和思考状态
       toolCallsAtom.set([]);
       thinkingTextAtom.set('');
+      inputBarInfoAtom.set({ type: 'idle' });
     });
   });
   agentTurn.onToolUse((toolUseId, toolName, toolInput, completed) => {
+    inputBarInfoAtom.set({ type: 'calling_tool' });
     const displayText = getToolDisplayText(toolName, toolInput);
     const existing = toolCallsAtom.get();
     const idx = existing.findIndex((t) => t.id === toolUseId);
@@ -34,6 +35,7 @@ export function handleToolUseState() {
 
 export function handleThinking() {
   agentTurn.onStreamCreate((stream) => {
+    inputBarInfoAtom.set({ type: 'thinking' });
     let thinkingText = '';
     stream.on('thinking', (chunk) => {
       thinkingText += chunk;

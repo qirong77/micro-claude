@@ -2,13 +2,11 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { thinkingTextAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
-import { useSpinner } from './common/Spin.js';
 
 const MAX_LINES = 10;
 
 export const ThinkText = React.memo(function ThinkText(): React.ReactNode {
   const text = useSchedulState(thinkingTextAtom);
-  const spinner = useSpinner();
 
   if (text.length === 0) return null;
 
@@ -17,10 +15,7 @@ export const ThinkText = React.memo(function ThinkText(): React.ReactNode {
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Text>
-        <Text dimColor>{spinner} </Text>
-        <Text dimColor>{display}</Text>
-      </Text>
+      <Text dimColor>{display}</Text>
     </Box>
   );
 });

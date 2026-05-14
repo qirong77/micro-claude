@@ -2,8 +2,6 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { thinkingTextAtom, toolCallsAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
-import { Spin } from './common/Spin.js';
-import { IfComponent } from './common/IfComponent.js';
 
 export const ToolCallList = React.memo(function ToolCallList(): React.ReactNode {
   const toolCalls = useSchedulState(toolCallsAtom);
@@ -17,12 +15,7 @@ export const ToolCallList = React.memo(function ToolCallList(): React.ReactNode 
     <Box flexDirection="column" paddingX={1}>
       {displayed.map((tc) => (
         <Box key={tc.id}>
-          <Text dimColor>
-            <IfComponent condition={!tc.completed}>
-              <Spin />
-            </IfComponent>
-            <Text>{tc.displayText}</Text>
-          </Text>
+          <Text dimColor>{tc.displayText}</Text>
         </Box>
       ))}
     </Box>
