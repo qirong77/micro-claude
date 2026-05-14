@@ -1,35 +1,57 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { C, type Command } from '../data.js';
+import { C } from '../data.js';
+
+export interface DropdownItem {
+  key: string;
+  label: string;
+  description?: string;
+  suffix?: { text: string; color?: string };
+}
 
 export function CommandDropdown({
-  commands,
+  items,
   selectedIndex,
+  title,
+  emptyMessage = 'no matching items',
 }: {
-  commands: Command[];
+  items: DropdownItem[];
   selectedIndex: number;
-  filter: string;
+  title?: string;
+  emptyMessage?: string;
 }): React.ReactNode {
-  if (commands.length === 0) {
+  if (items.length === 0) {
     return (
       <Box paddingX={1}>
-        <Text dimColor>no matching commands</Text>
+        <Text dimColor>{emptyMessage}</Text>
       </Box>
     );
   }
 
   return (
     <Box flexDirection="column" paddingX={1} paddingY={1}>
-      {commands.map((cmd, i) => {
+      {title && (
+        <Box paddingBottom={1}>
+          <Text dimColor>{title}</Text>
+        </Box>
+      )}
+      {items.map((item, i) => {
         const isSelected = i === selectedIndex;
         return (
-          <Box key={cmd.name}>
-            <Text color={isSelected ? C.primary : ''}>{isSelected ? '▸' : ' '}</Text>
+          <Box key={item.key}>
+            <Text color={isSelected ? C.primary : ''}>
+              {isSelected ? '▸' : ' '}
+            </Text>
             <Text bold color={isSelected ? C.primary : ''}>
               {' '}
-              /{cmd.name}
+              {item.label}
             </Text>
-            <Text dimColor> — {cmd.description}</Text>
+            {item.description && (
+              <Text dimColor> — {item.description}</Text>
+            )}
+            {item.suffix && (
+              <Text color={item.suffix.color ?? C.success}> {item.suffix.text}</Text>
+            )}
           </Box>
         );
       })}

@@ -2,7 +2,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, modelAtom, maxTokensAtom, inputBarStatusAtom, inputBarInfoAtom } from '../../store';
+import { messagesAtom, modelAtom, maxTokensAtom, inputBarStatusAtom, inputBarInfoAtom, effortAtom } from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 
@@ -47,13 +47,24 @@ class AgentTurn {
   async executeSingleIteration(): Promise<IterationResult> {
     const messages = messagesAtom.get();
 
+    const model = modelAtom.get();
+
+    const extraParams: Record<string, unknown> = {};
+    if (model === 'deepseek-reasoner') {
+      const effortLevel = (effortAtom.get() as 'low' | 'medium' | 'high') || 'medium';
+      const budgetMap = { low: 4000, medium: 16000, high: 64000 };
+      extraParams.thinking = { type: 'enabled', budget_tokens: budgetMap[effortLevel] };
+    }
+
     const stream = getClient().messages.stream({
-      model: modelAtom.get(),
+      model,
       max_tokens: maxTokensAtom.get(),
       system: systemPrompt,
       messages,
       tools: toolDefinitions,
-    });
+      ...extraParams,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any) as MessageStream<null>;
     this.onStreamCreateFns.forEach((fn) => fn(stream));
     let hasToolUse = false;
     const completedToolUses: Array<{ id: string; name: string; input: Record<string, any> }> = [];

@@ -38,7 +38,7 @@ export const LogArea = (): React.ReactNode => {
   const messages = useSchedulState(messagesAtom);
   const staticItems = messages.flatMap((raw, i): LogItem[] => {
     const msg = raw as LogMessage;
-    const text = getTextContent(msg.content);
+    let text = getTextContent(msg.content);
     if (!text) return [];
     if (msg.role === 'user') {
       return [
@@ -50,6 +50,7 @@ export const LogArea = (): React.ReactNode => {
       ];
     }
     if (msg.role === 'assistant') {
+      text = '🤖: ' + text
       const lines: LogItem[] = text.split('\n').map((line, j) => ({
         id: `${i}-${j}`,
         role: msg.role as 'assistant',
@@ -88,7 +89,7 @@ export const LogArea = (): React.ReactNode => {
             );
           }
           return (
-            <Box key={item.id}>
+            <Box key={item.id} paddingBottom={1}>
               <MarkdownRenderByLine text={item.text} />
             </Box>
           );

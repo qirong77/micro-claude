@@ -1,15 +1,27 @@
-import { Box, render, Text, useApp, useInput, usePaste, useStdout } from 'ink';
+import { Box, Text, useInput, usePaste, useStdout } from 'ink';
 import React, { useMemo, useRef, useState } from 'react';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { useSchedulState } from '../hooks';
-import { inputBarInfoAtom, type InputBarInfo } from '../../../store';
+import {
+  inputBarInfoAtom,
+  inputValueAtom,
+  cursorAtom,
+  selectedModelIndexAtom,
+  showModelSwitchAtom,
+  modelOptionsAtom,
+  modelAtom,
+  effortOptionsAtom,
+  showEffortSwitchAtom,
+  selectedEffortIndexAtom,
+  effortAtom,
+  EFFORT_TOKENS,
+} from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
 import stringWidth from 'string-width';
 
-/** 格式化毫秒为可读时长 */
 function formatElapsed(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   const s = (ms / 1000).toFixed(1);
@@ -42,54 +54,14 @@ function saveHistory(history: string[]) {
   }
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface InputState {
-  value: string;
-  cursor: number; // flat character offset into `value`
-}
-
-// ─── Cursor helpers ────────────────────────────────────────────────────────────
-
-/** Convert flat offset → [row, col] by scanning for newlines. */
-function toRowCol(text: string, offset: number): [number, number] {
-  let row = 0;
-  let col = 0;
-  const bound = Math.min(offset, text.length);
-  for (let i = 0; i < bound; i++) {
-    if (text[i] === '\n') {
-      row++;
-      col = 0;
-    } else col++;
-  }
-  return [row, col];
-}
-
-/** Start offset (in the flat string) of a given row. */
-function rowStart(lines: string[], row: number): number {
-  let start = 0;
-  for (let i = 0; i < row; i++) start += (lines[i]?.length ?? 0) + 1; // +1 for \n
-  return start;
-}
-
-// ─── Soft-wrap helpers (cursor must follow terminal wrapping) ─────────────────
-//
-// Ink wraps long <Text> runs at the terminal width. This component renders a
-// "block cursor" by splitting the current visual line into before/at/after.
-// If we only split by '\n', the cursor row/col becomes wrong once the text
-// wraps automatically (no manual newline). We therefore compute cursorRow/col
-// in *visual rows* based on terminal columns, similar to claude-code's Cursor.
-
 type VisualRow = { start: number; end: number; text: string };
 
 let _graphemeSeg: Intl.Segmenter | null | undefined;
 function getGraphemeSegmenter(): Intl.Segmenter | null {
   if (_graphemeSeg !== undefined) return _graphemeSeg ?? null;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   _graphemeSeg =
     typeof Intl !== 'undefined' && 'Segmenter' in Intl
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        new (Intl as any).Segmenter(undefined, { granularity: 'grapheme' })
+      ? new (Intl as any).Segmenter(undefined, { granularity: 'grapheme' })
       : null;
   return _graphemeSeg ?? null;
 }
@@ -111,7 +83,6 @@ function buildVisualRows(text: string, columns: number): VisualRow[] {
   if (text.length === 0) return [{ start: 0, end: 0, text: '' }];
 
   if (!seg) {
-    // Fallback: code units.
     for (let i = 0; i < text.length; i++) {
       const ch = text[i]!;
       if (ch === '\n') {
@@ -149,7 +120,6 @@ function visualPosFromOffset(rows: VisualRow[], offset: number): { row: number; 
   const lastEnd = rows[rows.length - 1]!.end;
   const clamped = Math.max(0, Math.min(offset, lastEnd));
 
-  // First row where clamped <= end
   let lo = 0;
   let hi = rows.length - 1;
   while (lo < hi) {
@@ -199,96 +169,150 @@ export function TerminalInput(props: {
   commands: readonly Command[];
 }) {
   const { stdout } = useStdout();
-  const [{ value, cursor }, setState] = useState<InputState>({
-    value: '',
-    cursor: 0,
-  });
+  const value = useSchedulState(inputValueAtom);
+  const cursor = useSchedulState(cursorAtom);
   const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
   const info = useSchedulState(inputBarInfoAtom);
+  const showModelSwitch = useSchedulState(showModelSwitchAtom);
+  const modelOptions = useSchedulState(modelOptionsAtom);
+  const selectedModelIndex = useSchedulState(selectedModelIndexAtom);
+  const currentModel = useSchedulState(modelAtom);
+  const showEffortSwitch = useSchedulState(showEffortSwitchAtom);
+  const effortOptions = useSchedulState(effortOptionsAtom);
+  const selectedEffortIndex = useSchedulState(selectedEffortIndexAtom);
+  const currentEffort = useSchedulState(effortAtom);
   const promptGlyph = '❯\u00A0';
   const totalCols = stdout?.columns ?? 80;
   const inputCols = Math.max(1, totalCols - stringWidth(promptGlyph));
-  // Leave one column for the inverse "block cursor" so it doesn't trigger an extra wrap.
   const wrapCols = Math.max(1, inputCols - 1);
   const visualRows = useMemo(() => buildVisualRows(value, wrapCols), [value, wrapCols]);
   const cursorVisual = useMemo(() => visualPosFromOffset(visualRows, cursor), [visualRows, cursor]);
 
   // ── Slash-command dropdown state ──────────────────────────────────────────
-  // selectedCommandIndex: 0-based index into filteredCommands; -1 means no selection
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(-1);
 
-  // Detect if current input looks like a slash command: starts with / and only on first line
   const slashFilter = useMemo(() => {
     const firstLine = value.split('\n')[0] ?? '';
     if (!firstLine.startsWith('/')) return '';
-    return firstLine.slice(1); // remove leading /
+    return firstLine.slice(1);
   }, [value]);
 
-  // Filter commands matching the typed prefix (case-insensitive)
   const filteredCommands = useMemo(() => {
     if (!slashFilter && slashFilter !== '') return [];
-    // If slashFilter is empty string (user typed just `/`), show all commands
     const filter = slashFilter.toLowerCase();
     return props.commands.filter((cmd) => cmd.name.toLowerCase().includes(filter));
   }, [props.commands, slashFilter]);
 
-  // Whether the dropdown should be visible
   const showCommandDropdown = useMemo(() => {
     const firstLine = value.split('\n')[0] ?? '';
     return firstLine.startsWith('/');
   }, [value]);
+
   // ── History navigation state ───────────────────────────────────────────────
-  //
-  // Mirrors useArrowKeyHistory in claude-code:
-  //
-  //   historyIndexRef  — synchronous counter so rapid Up/Down presses never
-  //                      read a stale index from a not-yet-committed render.
-  //                      0 = draft, 1 = most recent, 2 = second most recent …
-  //
-  //   draftRef         — snapshot of {value, cursor} taken the moment the user
-  //                      first presses Up from index 0, so Down all the way
-  //                      back restores exactly what they were typing.
   const historyIndexRef = useRef(0);
   const draftRef = useRef<{ value: string; cursor: number } | null>(null);
 
   // ── Paste handler ─────────────────────────────────────────────────────────
-  //
-  // Without usePaste, ink never enables bracketed-paste mode (ESC[?2004h), so
-  // pasted text arrives via useInput's `ch` parameter — including any raw \r
-  // characters from Windows CRLF line-endings.  When those reach the renderer,
-  // \r in a Text node resets the terminal cursor to column 0 mid-frame, which
-  // overwrites the prompt glyph "❯" and any characters that precede the \r (the
-  // "前面的<符号丢失" the user sees) and leaves the cursor in the wrong column.
-  //
-  // usePaste fixes this at the source:
-  //   1. It tells ink to send ESC[?2004h, so the terminal wraps pastes in
-  //      ESC[200~...ESC[201~ – ink routes those to the 'paste' event channel
-  //      instead of the 'input' channel, so useInput never sees pasted text.
-  //   2. We normalise line-endings (\r\n / bare \r → \n) and strip other C0
-  //      control characters (NUL, BEL, BS, VT, FF, SO…US, DEL) that would
-  //      corrupt terminal rendering if stored verbatim in the value string.
   usePaste((text) => {
     const sanitized = text
-      .replace(/\r\n/g, '\n') // Windows CRLF → LF
-      .replace(/\r/g, '\n') // bare CR → LF
-      // Strip C0 except LF (0x0A) and TAB (0x09); also strip DEL (0x7F).
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
       .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
 
     if (!sanitized) return;
 
-    setState(({ value: v, cursor: c }) => ({
-      value: v.slice(0, c) + sanitized + v.slice(c),
-      cursor: c + sanitized.length,
-    }));
+    const v = inputValueAtom.get();
+    const c = cursorAtom.get();
+    inputValueAtom.set(v.slice(0, c) + sanitized + v.slice(c));
+    cursorAtom.set(c + sanitized.length);
   });
 
+  // ── Helper to set both value and cursor ──────────────────────────────────────
+  function setInput(value: string, cursor: number) {
+    inputValueAtom.set(value);
+    cursorAtom.set(cursor);
+  }
+
   useInput((ch, key) => {
+    // ── Effort switch: confirm selection on Enter ─────────────────────────
+    if (showEffortSwitch && key.return && !key.shift && !key.meta) {
+      const idx = selectedEffortIndexAtom.get();
+      const opts = effortOptionsAtom.get();
+      if (idx >= 0 && idx < opts.length) {
+        effortAtom.set(opts[idx]!.id);
+      }
+      showEffortSwitchAtom.set(false);
+      selectedEffortIndexAtom.set(0);
+      return;
+    }
+
+    // ── Effort switch: escape to close ────────────────────────────────────
+    if (showEffortSwitch && key.escape) {
+      showEffortSwitchAtom.set(false);
+      selectedEffortIndexAtom.set(0);
+      return;
+    }
+
+    // ── Effort switch: up/down navigation ─────────────────────────────────
+    if (showEffortSwitch) {
+      if (key.upArrow) {
+        const opts = effortOptionsAtom.get();
+        selectedEffortIndexAtom.set(
+          selectedEffortIndexAtom.get() <= 0 ? opts.length - 1 : selectedEffortIndexAtom.get() - 1,
+        );
+        return;
+      }
+      if (key.downArrow) {
+        const opts = effortOptionsAtom.get();
+        selectedEffortIndexAtom.set(
+          selectedEffortIndexAtom.get() >= opts.length - 1 ? 0 : selectedEffortIndexAtom.get() + 1,
+        );
+        return;
+      }
+    }
+
+    // ── Model switch: confirm selection on Enter ────────────────────────────
+    if (showModelSwitch && key.return && !key.shift && !key.meta) {
+      const idx = selectedModelIndexAtom.get();
+      const opts = modelOptionsAtom.get();
+      if (idx >= 0 && idx < opts.length) {
+        modelAtom.set(opts[idx]!.id);
+      }
+      showModelSwitchAtom.set(false);
+      selectedModelIndexAtom.set(0);
+      return;
+    }
+
+    // ── Model switch: escape to close ───────────────────────────────────────
+    if (showModelSwitch && key.escape) {
+      showModelSwitchAtom.set(false);
+      selectedModelIndexAtom.set(0);
+      return;
+    }
+
+    // ── Model switch: up/down navigation ────────────────────────────────────
+    if (showModelSwitch) {
+      if (key.upArrow) {
+        const opts = modelOptionsAtom.get();
+        selectedModelIndexAtom.set(
+          selectedModelIndexAtom.get() <= 0 ? opts.length - 1 : selectedModelIndexAtom.get() - 1,
+        );
+        return;
+      }
+      if (key.downArrow) {
+        const opts = modelOptionsAtom.get();
+        selectedModelIndexAtom.set(
+          selectedModelIndexAtom.get() >= opts.length - 1 ? 0 : selectedModelIndexAtom.get() + 1,
+        );
+        return;
+      }
+    }
+
     // ── Enter (no modifier) → submit ──────────────────────────────────────────
     if (key.return && !key.shift && !key.meta) {
       const trimmed = value.trim();
       if (trimmed) {
         setHistoryInputs((prev) => {
-          // deduplicate: if same as last entry, don't add again
           if (prev[prev.length - 1] === trimmed) return prev;
           const next = [...prev, trimmed];
           const clipped = next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
@@ -296,7 +320,7 @@ export function TerminalInput(props: {
           return clipped;
         });
       }
-      // ── If a command is selected in the dropdown, execute it instead ────
+
       if (
         showCommandDropdown &&
         selectedCommandIndex >= 0 &&
@@ -304,12 +328,11 @@ export function TerminalInput(props: {
       ) {
         const cmd = filteredCommands[selectedCommandIndex];
         if (cmd) {
-          // Extract argument after the command name (e.g. "/log foo" → arg = "foo")
           const firstLine = value.split('\n')[0] ?? '';
-          const arg = firstLine.slice(cmd.name.length + 1).trim(); // +1 for /
+          const arg = firstLine.slice(cmd.name.length + 1).trim();
           cmd.action(arg || undefined);
         }
-        setState({ value: '', cursor: 0 });
+        setInput('', 0);
         setSelectedCommandIndex(-1);
         historyIndexRef.current = 0;
         draftRef.current = null;
@@ -317,10 +340,7 @@ export function TerminalInput(props: {
       }
 
       props.onSubmit(value);
-      setState({
-        value: '',
-        cursor: 0,
-      });
+      setInput('', 0);
       setSelectedCommandIndex(-1);
       historyIndexRef.current = 0;
       draftRef.current = null;
@@ -329,10 +349,9 @@ export function TerminalInput(props: {
 
     // ── Shift+Enter / Meta(Option)+Enter → insert newline ────────────────────
     if (key.return && (key.shift || key.meta)) {
-      setState(({ value: v, cursor: c }) => ({
-        value: v.slice(0, c) + '\n' + v.slice(c),
-        cursor: c + 1,
-      }));
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      setInput(v.slice(0, c) + '\n' + v.slice(c), c + 1);
       return;
     }
 
@@ -341,50 +360,46 @@ export function TerminalInput(props: {
       setSelectedCommandIndex(-1);
       historyIndexRef.current = 0;
       draftRef.current = null;
-      setState({ value: '', cursor: 0 });
+      setInput('', 0);
       return;
     }
 
     // ── Backspace ─────────────────────────────────────────────────────────────
     if (key.backspace) {
-      setState(({ value: v, cursor: c }) =>
-        c > 0 ? { value: v.slice(0, c - 1) + v.slice(c), cursor: c - 1 } : { value: v, cursor: c },
-      );
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      if (c > 0) {
+        setInput(v.slice(0, c - 1) + v.slice(c), c - 1);
+      }
       return;
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
     if (key.delete) {
-      setState(({ value: v, cursor: c }) =>
-        c < v.length
-          ? { value: v.slice(0, c) + v.slice(c + 1), cursor: c }
-          : { value: v, cursor: c },
-      );
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      if (c < v.length) {
+        setInput(v.slice(0, c) + v.slice(c + 1), c);
+      }
       return;
     }
 
     // ── Left / Right ──────────────────────────────────────────────────────────
     if (key.leftArrow && !key.ctrl && !key.meta) {
-      setState(({ value: v, cursor: c }) => ({
-        value: v,
-        cursor: Math.max(0, c - 1),
-      }));
+      const c = cursorAtom.get();
+      cursorAtom.set(Math.max(0, c - 1));
       return;
     }
 
     if (key.rightArrow && !key.ctrl && !key.meta) {
-      setState(({ value: v, cursor: c }) => ({
-        value: v,
-        cursor: Math.min(v.length, c + 1),
-      }));
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      cursorAtom.set(Math.min(v.length, c + 1));
       return;
     }
 
     // ── Up arrow ──────────────────────────────────────────────────────────────
-    // Priority: if command dropdown is visible, navigate dropdown selection up.
-    // Otherwise: move cursor up within multi-line text, then history navigation.
     if (key.upArrow) {
-      // ── Command dropdown navigation (up) ──────────────────────────────────
       if (showCommandDropdown && filteredCommands.length > 0) {
         setSelectedCommandIndex((prev) => {
           if (prev <= 0) return filteredCommands.length - 1;
@@ -393,46 +408,35 @@ export function TerminalInput(props: {
         return;
       }
 
-      const { row, col } = visualPosFromOffset(buildVisualRows(value, wrapCols), cursor);
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const { row } = visualPosFromOffset(buildVisualRows(v, wrapCols), c);
 
       if (row > 0) {
-        // Move cursor up within the visual wrapped rows.
-        setState(({ value: v, cursor: c }) => {
-          const rows = buildVisualRows(v, wrapCols);
-          const p = visualPosFromOffset(rows, c);
-          return { value: v, cursor: offsetFromVisualPos(rows, p.row - 1, p.col) };
-        });
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        cursorAtom.set(offsetFromVisualPos(rows, p.row - 1, p.col));
         return;
       }
 
-      // Cursor is on the first visual line → history navigation.
-      // Read & increment the ref synchronously so rapid presses each target a
-      // distinct slot even if React hasn't committed the previous render yet.
-      const targetIdx = historyIndexRef.current; // 0 = draft, 1 = most recent …
+      const targetIdx = historyIndexRef.current;
 
-      // First press: snapshot the draft so Down can restore it later.
       if (targetIdx === 0) {
-        draftRef.current = { value, cursor };
+        draftRef.current = { value: v, cursor: c };
       }
 
       const historyLen = HistoryInputs.length;
-      const historyIdx = historyLen - 1 - targetIdx; // reverse: newest first
-      if (historyIdx < 0) return; // already at the oldest entry, do nothing
+      const historyIdx = historyLen - 1 - targetIdx;
+      if (historyIdx < 0) return;
 
       const entry = HistoryInputs[historyIdx];
       historyIndexRef.current = targetIdx + 1;
-      // Cursor goes to end of the entry (conventional shell behaviour).
-      setState({ value: entry, cursor: entry.length });
+      setInput(entry, entry.length);
       return;
     }
 
     // ── Down arrow ────────────────────────────────────────────────────────────
-    // Priority: if command dropdown is visible, navigate dropdown selection down.
-    // Mirror of the Up logic: move cursor down within the value first; only
-    // navigate towards newer history once the cursor is on the last logical
-    // line (matching claude-code's downOrHistoryDown()).
     if (key.downArrow) {
-      // ── Command dropdown navigation (down) ────────────────────────────────
       if (showCommandDropdown && filteredCommands.length > 0) {
         setSelectedCommandIndex((prev) => {
           if (prev >= filteredCommands.length - 1) return 0;
@@ -444,156 +448,140 @@ export function TerminalInput(props: {
       const curHistIdx = historyIndexRef.current;
 
       if (curHistIdx === 0) {
-        // Not browsing history → plain cursor-down within the visual wrapped rows.
-        setState(({ value: v, cursor: c }) => {
-          const rows = buildVisualRows(v, wrapCols);
-          const p = visualPosFromOffset(rows, c);
-          if (p.row >= rows.length - 1) return { value: v, cursor: c };
-          return { value: v, cursor: offsetFromVisualPos(rows, p.row + 1, p.col) };
-        });
+        const v = inputValueAtom.get();
+        const c = cursorAtom.get();
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        if (p.row < rows.length - 1) {
+          cursorAtom.set(offsetFromVisualPos(rows, p.row + 1, p.col));
+        }
         return;
       }
 
-      // We're inside a history entry.  If the cursor is not yet on the last
-      // visual line of that entry, move it down within the entry first.
-      const rowsNow = buildVisualRows(value, wrapCols);
-      const pNow = visualPosFromOffset(rowsNow, cursor);
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const rowsNow = buildVisualRows(v, wrapCols);
+      const pNow = visualPosFromOffset(rowsNow, c);
       if (pNow.row < rowsNow.length - 1) {
-        setState(({ value: v, cursor: c }) => {
-          const rows = buildVisualRows(v, wrapCols);
-          const p = visualPosFromOffset(rows, c);
-          if (p.row >= rows.length - 1) return { value: v, cursor: c };
-          return { value: v, cursor: offsetFromVisualPos(rows, p.row + 1, p.col) };
-        });
+        const rows = buildVisualRows(v, wrapCols);
+        const p = visualPosFromOffset(rows, c);
+        if (p.row < rows.length - 1) {
+          cursorAtom.set(offsetFromVisualPos(rows, p.row + 1, p.col));
+        }
         return;
       }
 
-      // Cursor is on the last line of the history entry → go to a newer slot.
       if (curHistIdx > 1) {
-        // Navigate one step towards the more recent end of the history list.
-        // curHistIdx=N shows HistoryInputs[historyLen - N], so the next newer
-        // entry is HistoryInputs[historyLen - N + 1].
         const historyLen = HistoryInputs.length;
         const newerIdx = historyLen - curHistIdx + 1;
         const newerEntry = HistoryInputs[newerIdx];
         if (newerEntry !== undefined) {
           historyIndexRef.current = curHistIdx - 1;
-          setState({ value: newerEntry, cursor: newerEntry.length });
+          setInput(newerEntry, newerEntry.length);
         }
         return;
       }
 
-      // curHistIdx === 1 → arrived back at the draft.
       historyIndexRef.current = 0;
       const draft = draftRef.current;
       draftRef.current = null;
-      setState(draft ?? { value: '', cursor: 0 });
+      setInput(draft?.value ?? '', draft?.cursor ?? 0);
       return;
     }
 
     // ── Home / End ────────────────────────────────────────────────────────────
     if (key.home) {
-      setState(({ value: v, cursor: c }) => {
-        const rows = buildVisualRows(v, wrapCols);
-        const p = visualPosFromOffset(rows, c);
-        return { value: v, cursor: rows[p.row]!.start };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const rows = buildVisualRows(v, wrapCols);
+      const p = visualPosFromOffset(rows, c);
+      cursorAtom.set(rows[p.row]!.start);
       return;
     }
 
     if (key.end) {
-      setState(({ value: v, cursor: c }) => {
-        const rows = buildVisualRows(v, wrapCols);
-        const p = visualPosFromOffset(rows, c);
-        return { value: v, cursor: rows[p.row]!.end };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const rows = buildVisualRows(v, wrapCols);
+      const p = visualPosFromOffset(rows, c);
+      cursorAtom.set(rows[p.row]!.end);
       return;
     }
 
     // ── Readline shortcuts ─────────────────────────────────────────────────────
-    // Ctrl+A → start of line
     if (key.ctrl && ch === 'a') {
-      setState(({ value: v, cursor: c }) => {
-        const rows = buildVisualRows(v, wrapCols);
-        const p = visualPosFromOffset(rows, c);
-        return { value: v, cursor: rows[p.row]!.start };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const rows = buildVisualRows(v, wrapCols);
+      const p = visualPosFromOffset(rows, c);
+      cursorAtom.set(rows[p.row]!.start);
       return;
     }
 
-    // Ctrl+E → end of line
     if (key.ctrl && ch === 'e') {
-      setState(({ value: v, cursor: c }) => {
-        const rows = buildVisualRows(v, wrapCols);
-        const p = visualPosFromOffset(rows, c);
-        return { value: v, cursor: rows[p.row]!.end };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const rows = buildVisualRows(v, wrapCols);
+      const p = visualPosFromOffset(rows, c);
+      cursorAtom.set(rows[p.row]!.end);
       return;
     }
 
-    // Ctrl+U → delete to start of line
     if (key.ctrl && ch === 'u') {
-      setState(({ value: v, cursor: c }) => {
-        const rows = buildVisualRows(v, wrapCols);
-        const p = visualPosFromOffset(rows, c);
-        const start = rows[p.row]!.start;
-        return { value: v.slice(0, start) + v.slice(c), cursor: start };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const rows = buildVisualRows(v, wrapCols);
+      const p = visualPosFromOffset(rows, c);
+      const start = rows[p.row]!.start;
+      setInput(v.slice(0, start) + v.slice(c), start);
       return;
     }
 
-    // Ctrl+K → delete to end of line
     if (key.ctrl && ch === 'k') {
-      setState(({ value: v, cursor: c }) => {
-        const rows = buildVisualRows(v, wrapCols);
-        const p = visualPosFromOffset(rows, c);
-        const end = rows[p.row]!.end;
-        return { value: v.slice(0, c) + v.slice(end), cursor: c };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      const rows = buildVisualRows(v, wrapCols);
+      const p = visualPosFromOffset(rows, c);
+      const end = rows[p.row]!.end;
+      setInput(v.slice(0, c) + v.slice(end), c);
       return;
     }
 
-    // Ctrl+W → delete word before cursor
     if (key.ctrl && ch === 'w') {
-      setState(({ value: v, cursor: c }) => {
-        // skip trailing spaces, then delete back to next space / newline
-        let i = c;
-        while (i > 0 && v[i - 1] === ' ') i--;
-        while (i > 0 && v[i - 1] !== ' ' && v[i - 1] !== '\n') i--;
-        return { value: v.slice(0, i) + v.slice(c), cursor: i };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      let i = c;
+      while (i > 0 && v[i - 1] === ' ') i--;
+      while (i > 0 && v[i - 1] !== ' ' && v[i - 1] !== '\n') i--;
+      setInput(v.slice(0, i) + v.slice(c), i);
       return;
     }
 
-    // Ctrl+Left → move one word left
     if (key.leftArrow && (key.ctrl || key.meta)) {
-      setState(({ value: v, cursor: c }) => {
-        let i = c;
-        while (i > 0 && v[i - 1] === ' ') i--;
-        while (i > 0 && v[i - 1] !== ' ' && v[i - 1] !== '\n') i--;
-        return { value: v, cursor: i };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      let i = c;
+      while (i > 0 && v[i - 1] === ' ') i--;
+      while (i > 0 && v[i - 1] !== ' ' && v[i - 1] !== '\n') i--;
+      cursorAtom.set(i);
       return;
     }
 
-    // Ctrl+Right → move one word right
     if (key.rightArrow && (key.ctrl || key.meta)) {
-      setState(({ value: v, cursor: c }) => {
-        let i = c;
-        while (i < v.length && v[i] === ' ') i++;
-        while (i < v.length && v[i] !== ' ' && v[i] !== '\n') i++;
-        return { value: v, cursor: i };
-      });
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      let i = c;
+      while (i < v.length && v[i] === ' ') i++;
+      while (i < v.length && v[i] !== ' ' && v[i] !== '\n') i++;
+      cursorAtom.set(i);
       return;
     }
 
     // ── Printable characters ───────────────────────────────────────────────────
     if (!key.ctrl && !key.meta && !key.escape && ch) {
-      setState(({ value: v, cursor: c }) => ({
-        value: v.slice(0, c) + ch + v.slice(c),
-        cursor: c + ch.length,
-      }));
-      // Reset command selection when user types (filter may change)
+      const v = inputValueAtom.get();
+      const c = cursorAtom.get();
+      setInput(v.slice(0, c) + ch + v.slice(c), c + ch.length);
       setSelectedCommandIndex(0);
     }
   });
@@ -603,17 +591,10 @@ export function TerminalInput(props: {
   const lines = visualRows.map((r) => r.text);
   const cursorRow = cursorVisual.row;
 
-  // Only pass visible commands to CommandDropdown
   const visibleCommands = showCommandDropdown ? filteredCommands : [];
 
   return (
     <Box flexDirection="column" marginTop={1}>
-      {/*
-       * Input box
-       * Replicates claude-code's:
-       *   borderStyle="round"  borderLeft={false}  borderRight={false}  borderBottom
-       * → a top rule and bottom rule, no side bars, rounded-style dashes.
-       */}
       <Box
         borderStyle="round"
         borderColor={C.dim}
@@ -623,15 +604,11 @@ export function TerminalInput(props: {
         flexDirection="row"
         alignItems="flex-start"
       >
-        {/* Prompt glyph — mirrors PromptInputModeIndicator's ❯\u00A0 */}
         <Text color={C.primary}>{promptGlyph}</Text>
 
-        {/* Multi-line text area */}
         <Box flexDirection="column" flexGrow={1} flexShrink={1}>
           {lines.map((line, idx) => {
             if (idx !== cursorRow) {
-              // Non-cursor line — a plain space keeps the row from collapsing
-              // when the line is empty (e.g. blank continuation lines).
               return (
                 <Box key={idx}>
                   <Text>{line.length > 0 ? line : ' '}</Text>
@@ -639,11 +616,10 @@ export function TerminalInput(props: {
               );
             }
 
-            // Cursor row: split into before / cursor-char / after
             const vr = visualRows[idx]!;
             const rel = Math.max(0, Math.min(cursor - vr.start, line.length));
             const before = line.slice(0, rel);
-            const at = line[rel] ?? ' '; // fallback space = block cursor at EOL
+            const at = line[rel] ?? ' ';
             const after = rel < line.length ? line.slice(rel + 1) : '';
 
             return (
@@ -658,15 +634,48 @@ export function TerminalInput(props: {
       </Box>
 
       {/* Command dropdown — shown when user types / */}
-      {showCommandDropdown && (
+      {showCommandDropdown && !showModelSwitch && (
         <CommandDropdown
-          commands={visibleCommands}
+          items={visibleCommands.map((cmd) => ({
+            key: cmd.name,
+            label: `/${cmd.name}`,
+            description: cmd.description,
+          }))}
           selectedIndex={selectedCommandIndex >= 0 ? selectedCommandIndex : 0}
-          filter={slashFilter}
+          emptyMessage="no matching commands"
         />
       )}
 
-      {/* 状态栏：仅展示 error 和 completed，用颜色区分 */}
+      {/* Effort switch dropdown */}
+      {showEffortSwitch && (
+        <CommandDropdown
+          items={effortOptions.map((opt) => ({
+            key: opt.id,
+            label: opt.label,
+            suffix: opt.id === currentEffort
+              ? { text: `(active)`, color: C.success }
+              : { text: `${EFFORT_TOKENS[opt.id]} tok`, color: C.dim },
+          }))}
+          selectedIndex={selectedEffortIndex}
+          title="select effort level:"
+          emptyMessage="no options available"
+        />
+      )}
+
+      {/* Model switch dropdown */}
+      {showModelSwitch && (
+        <CommandDropdown
+          items={modelOptions.map((opt) => ({
+            key: opt.id,
+            label: opt.label,
+            suffix: opt.id === currentModel ? { text: '(active)', color: C.success } : undefined,
+          }))}
+          selectedIndex={selectedModelIndex}
+          title="select a model:"
+          emptyMessage="no models available"
+        />
+      )}
+
       {info.type === 'error' && (
         <Box paddingX={2} flexDirection="row">
           <Text color={C.error}>✗ {info.message ?? '出错了'}</Text>
@@ -684,27 +693,14 @@ export function TerminalInput(props: {
 }
 
 // ─── Resize debounce ──────────────────────────────────────────────────────────
-//
-// ink's `resized` handler calls `this.onRender()` directly (unthrottled) on
-// every `'resize'` event emitted by stdout.  Terminal emulators fire this
-// event for every intermediate step while the user drags a window edge, which
-// causes one full re-render per step — visible as repeated flickering.
-//
-// Fix: intercept stdout.emit *before* registering ink's listener and collapse
-// rapid bursts into a single deferred event.  The real emit is fired once the
-// stream goes quiet for DEBOUNCE_MS, so ink sees exactly one resize per drag.
 
 const DEBOUNCE_MS = 1000 * 60;
 
 (function patchResizeDebounce() {
-  // Keep a reference to the real emit so we can forward all non-resize events
-  // and eventually fire the debounced resize.
   const _emit = process.stdout.emit.bind(process.stdout) as typeof process.stdout.emit;
 
   let _timer: ReturnType<typeof setTimeout> | undefined;
 
-  // Overwrite emit on the stdout instance (not the prototype) so only this
-  // stream is affected and the patch is trivially reverted if needed.
   (
     process.stdout as NodeJS.WriteStream & {
       emit: typeof process.stdout.emit;
@@ -717,7 +713,7 @@ const DEBOUNCE_MS = 1000 * 60;
     if (event === 'resize') {
       clearTimeout(_timer);
       _timer = setTimeout(() => _emit('resize'), DEBOUNCE_MS);
-      return true; // mirrors the real emit return value (listeners existed)
+      return true;
     }
     return (_emit as (e: string | symbol, ...a: unknown[]) => boolean)(event, ...args);
   };

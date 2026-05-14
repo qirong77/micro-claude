@@ -7,7 +7,16 @@ import {
   baseUrlAtom,
   apiKeyAtom,
   modelAtom,
+  modelOptionsAtom,
+  showModelSwitchAtom,
+  selectedModelIndexAtom,
+  inputValueAtom,
+  cursorAtom,
   cacheDir,
+  effortAtom,
+  effortOptionsAtom,
+  showEffortSwitchAtom,
+  selectedEffortIndexAtom,
 } from '../store';
 import type { Command, InputHandler, InputState, InputAction } from '../components/ui/data';
 import { addInputHandler } from '../components/ui';
@@ -34,6 +43,15 @@ export abstract class MicaPlugin {
     baseUrl: baseUrlAtom as ReadableAtom<string>,
     apiKey: apiKeyAtom as ReadableAtom<string>,
     model: modelAtom as ReadableAtom<string>,
+    modelOptions: modelOptionsAtom as WritableAtom<Array<{ id: string; label: string }>>,
+    showModelSwitch: showModelSwitchAtom as WritableAtom<boolean>,
+    selectedModelIndex: selectedModelIndexAtom as WritableAtom<number>,
+    effort: effortAtom as WritableAtom<string>,
+    effortOptions: effortOptionsAtom as WritableAtom<Array<{ id: string; label: string }>>,
+    showEffortSwitch: showEffortSwitchAtom as WritableAtom<boolean>,
+    selectedEffortIndex: selectedEffortIndexAtom as WritableAtom<number>,
+    inputValue: inputValueAtom as WritableAtom<string>,
+    cursor: cursorAtom as WritableAtom<number>,
     cacheDir,
   };
 
