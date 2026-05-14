@@ -3,6 +3,7 @@ import { Box, Text, useStdout } from 'ink';
 import type Anthropic from '@anthropic-ai/sdk';
 import { messagesAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
+import { classifyLine } from './MarkdownRenderByLine.js';
 
 // ── LogArea 内部使用的消息类型 ────────────────────────────
 // Anthropic.MessageParam 不包含 status 字段，但我们需要在 UI 中区分流式消息
@@ -28,10 +29,61 @@ interface LogItem {
   text: string;
 }
 
-// ANSI 颜色 — 与 data.ts 中 C.primary 对应 (#4a9eff)
-const primaryAnsi = '\x1b[38;2;74;158;255m';
+// ── ANSI 颜色常量（与 MarkdownRenderByLine 一致） ──────────
+const primaryAnsi = '\x1b[38;2;74;158;255m'; // #4a9eff
+const codeColor = '\x1b[38;2;145;193;247m'; // #91c1f7
 const bold = '\x1b[1m';
+const boldOff = '\x1b[22m';
+const dim = '\x1b[2m';
 const reset = '\x1b[0m';
+
+/** 将 inline 标记（**bold**、`code`）渲染为 ANSI 字符串 */
+function renderInlineToAnsi(text: string): string {
+  const parts: string[] = [];
+  let lastIndex = 0;
+  const regex = /\*\*(.+?)\*\*|`([^`]+)`/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[1] !== undefined) {
+      parts.push(`${bold}${match[1]}${boldOff}`);
+    } else if (match[2] !== undefined) {
+      parts.push(`${codeColor}${match[2]}\x1b[39m`);
+    }
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.join('');
+}
+
+/** 将单行日志条目格式化为 ANSI 字符串，保留 Markdown 视觉样式 */
+function formatItemForStdout(item: LogItem): string {
+  if (item.role === 'user') {
+    return `${bold}${primaryAnsi}▌ ${item.text}${reset}`;
+  }
+
+  const type = classifyLine(item.text);
+
+  switch (type) {
+    case 'empty':
+      return '';
+    case 'fence':
+      return `${dim}${item.text}${reset}`;
+    case 'heading':
+      return `${bold}${primaryAnsi}${renderInlineToAnsi(item.text)}${reset}`;
+    case 'blockquote':
+      return `${dim}${renderInlineToAnsi(item.text)}${reset}`;
+    default:
+      return renderInlineToAnsi(item.text);
+  }
+}
 
 export const LogArea = (): React.ReactNode => {
   const { write } = useStdout();
@@ -78,8 +130,7 @@ export const LogArea = (): React.ReactNode => {
     return [];
   });
 
-  // 完成的消息直接写入 stdout，进入终端滚动缓冲区，Ink 的 write
-  // 会安全地协调（log.clear → 写入 → restoreLastOutput），不会破坏 Ink 的帧管理
+  // 完成的消息使用 ANSI 格式化后写入 stdout，保留 Markdown 样式同时进入终端滚动缓冲区
   React.useEffect(() => {
     const newItems = logItems.slice(writtenCountRef.current);
     if (newItems.length === 0) return;
@@ -87,13 +138,12 @@ export const LogArea = (): React.ReactNode => {
 
     const lines: string[] = [];
     for (const item of newItems) {
-      if (item.role === 'user') {
-        lines.push(`${bold}${primaryAnsi}▌ ${item.text}${reset}`);
-      } else {
-        lines.push(item.text);
-      }
+      const formatted = formatItemForStdout(item);
+      if (formatted) lines.push(formatted);
     }
-    write(lines.join('\n') + '\n');
+    if (lines.length > 0) {
+      write(lines.join('\n') + '\n');
+    }
   }, [logItems, write]);
 
   // 同步 state，确保 Ink 能正确检测到变化并重渲染
