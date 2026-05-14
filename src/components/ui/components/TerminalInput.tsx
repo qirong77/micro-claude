@@ -13,6 +13,7 @@ import {
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
 import stringWidth from 'string-width';
+import { getImageFromClipboard, saveImage, hasImageInClipboard } from '../utils/imagePaste.js';
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
 const MAX_HISTORY = 100;
@@ -196,12 +197,40 @@ export function TerminalInput(props: {
       .replace(/\r/g, '\n')
       .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
 
+    // Empty paste + macOS = possible image paste. Check clipboard.
+    if (!sanitized && process.platform === 'darwin' && hasImageInClipboard()) {
+      const imageData = getImageFromClipboard();
+      if (imageData) {
+        const v = inputValueAtom.get();
+        const c = cursorAtom.get();
+        const ref = `[Image](${imageData.path})`;
+        inputValueAtom.set(v.slice(0, c) + ref + v.slice(c));
+        cursorAtom.set(c + ref.length);
+      }
+      return;
+    }
+
     if (!sanitized) return;
+
+    // Check if pasted text contains image file paths (drag & drop from Finder)
+    const parts = sanitized.split(/\s+/);
+    let insertText = sanitized;
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(trimmed) && existsSync(trimmed)) {
+        const buf = readFileSync(trimmed);
+        const ext = trimmed.toLowerCase().match(/\.(\w+)$/)?.[1] || 'png';
+        const mediaType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+        const savedPath = saveImage(buf.toString('base64'), mediaType);
+        const ref = `[Image](${savedPath})`;
+        insertText = insertText.replace(trimmed, ref);
+      }
+    }
 
     const v = inputValueAtom.get();
     const c = cursorAtom.get();
-    inputValueAtom.set(v.slice(0, c) + sanitized + v.slice(c));
-    cursorAtom.set(c + sanitized.length);
+    inputValueAtom.set(v.slice(0, c) + insertText + v.slice(c));
+    cursorAtom.set(c + insertText.length);
   });
 
   // ── Helper to set both value and cursor ──────────────────────────────────────
@@ -593,7 +622,7 @@ export function TerminalInput(props: {
 
 // ─── Resize debounce ──────────────────────────────────────────────────────────
 
-const DEBOUNCE_MS = 1000 * 60;
+const DEBOUNCE_MS = 1000;
 
 (function patchResizeDebounce() {
   const _emit = process.stdout.emit.bind(process.stdout) as typeof process.stdout.emit;
