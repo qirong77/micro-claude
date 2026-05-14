@@ -51,7 +51,8 @@ export const MicaAgent = {
     _installedPlugins.push(plugin);
     return plugin;
   },
-  /** 获取所有已安装的插件实例 */
-  getInstalledPlugins: () => _installedPlugins,
+  run(){
+    ui.run()
+  }
 };
 export type IMicaAgent = typeof MicaAgent;

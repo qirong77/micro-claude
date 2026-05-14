@@ -13,4 +13,4 @@ await MicaAgent.usePlugin(new QuickCommandClearPlugin());
 await MicaAgent.usePlugin(new QuickCommandModelPlugin());
 await MicaAgent.usePlugin(new DebugExportAtomPlugin());
 
-MicaAgent.ui.run();
+MicaAgent.run();
