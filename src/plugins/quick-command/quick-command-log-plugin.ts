@@ -5,13 +5,13 @@ import { MicaPlugin } from '../MicaPlugin';
 /**
  * 快速命令插件：导出会话记录到当前工作路径。
  *
- * 注册 `/export-session` 命令，将当前 agent 的完整对话历史（messages）
+ * 注册 `/session-export` 命令，将当前 agent 的完整对话历史（messages）
  * 保存为 JSON 文件到 process.cwd()。
  */
 export class QuickCommandLogPlugin extends MicaPlugin {
   onInstall(): void {
     this.addQuickCommand({
-      name: 'export-session',
+      name: 'session-export',
       description: '导出会话记录到当前路径',
       action: async () => {
         const messages = this.store.messages.get();

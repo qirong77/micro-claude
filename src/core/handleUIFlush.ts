@@ -17,10 +17,6 @@ export function handleToolUseState() {
     const existing = toolCallsAtom.get();
     const idx = existing.findIndex((t) => t.id === toolUseId);
     
-    // 当有工具调用时，更新 InputBar 状态
-    if (!completed) {
-      inputBarStatusAtom.set('calling_tool');
-    }
     
     if (idx !== -1) {
       // 更新已有记录

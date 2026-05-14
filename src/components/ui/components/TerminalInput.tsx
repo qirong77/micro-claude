@@ -15,6 +15,10 @@ import {
   effortOptionsAtom,
   selectedEffortIndexAtom,
   effortAtom,
+  showSessionListAtom,
+  sessionsIndexAtom,
+  selectedSessionIndexAtom,
+  sessionSwitchAtom,
 } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
@@ -182,7 +186,9 @@ export function TerminalInput(props: {
   const filteredCommands = useMemo(() => {
     if (!slashFilter && slashFilter !== '') return [];
     const filter = slashFilter.toLowerCase();
-    return props.commands.filter((cmd) => cmd.name.toLowerCase().includes(filter));
+    return props.commands
+      .filter((cmd) => cmd.name.toLowerCase().includes(filter))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [props.commands, slashFilter]);
 
   const showCommandDropdown = useMemo(() => {
@@ -285,6 +291,45 @@ export function TerminalInput(props: {
         const opts = modelOptionsAtom.get();
         selectedModelIndexAtom.set(
           selectedModelIndexAtom.get() >= opts.length - 1 ? 0 : selectedModelIndexAtom.get() + 1,
+        );
+        return;
+      }
+    }
+
+    // ── Session switch: confirm selection on Enter ─────────────────────────
+    if (showSessionListAtom.get() && key.return && !key.shift && !key.meta) {
+      const idx = selectedSessionIndexAtom.get();
+      const sessions = sessionsIndexAtom.get();
+      if (idx >= 0 && idx < sessions.length) {
+        sessionSwitchAtom.set(sessions[idx]!.id);
+      }
+      showSessionListAtom.set(false);
+      selectedSessionIndexAtom.set(0);
+      return;
+    }
+
+    // ── Session switch: escape to close ────────────────────────────────────
+    if (showSessionListAtom.get() && key.escape) {
+      showSessionListAtom.set(false);
+      selectedSessionIndexAtom.set(0);
+      return;
+    }
+
+    // ── Session switch: up/down navigation ─────────────────────────────────
+    const sessionListVisible = showSessionListAtom.get();
+    const hasSessions = sessionsIndexAtom.get().length > 0;
+    if (sessionListVisible && hasSessions) {
+      if (key.upArrow) {
+        const sessions = sessionsIndexAtom.get();
+        selectedSessionIndexAtom.set(
+          selectedSessionIndexAtom.get() <= 0 ? sessions.length - 1 : selectedSessionIndexAtom.get() - 1,
+        );
+        return;
+      }
+      if (key.downArrow) {
+        const sessions = sessionsIndexAtom.get();
+        selectedSessionIndexAtom.set(
+          selectedSessionIndexAtom.get() >= sessions.length - 1 ? 0 : selectedSessionIndexAtom.get() + 1,
         );
         return;
       }

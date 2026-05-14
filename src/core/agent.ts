@@ -7,8 +7,9 @@ import { MicaPlugin } from '../plugins/MicaPlugin';
 // ── 用户提交入口 ──
 ui.onUserSubmit(async (text) => {
   const startTime = Date.now();
+
+  inputBarStatusAtom.set('idle');
   try {
-    inputBarStatusAtom.set('thinking');
     await agentTurn.run(text, () => {
       statusesAtom.set([]);
       thinkingTextAtom.set('');

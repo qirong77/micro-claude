@@ -83,6 +83,22 @@ export const statusesAtom = atom<Array<{ id: string; text: string }>>([]);
 /** 大模型思考文案（当前流式输出） */
 export const thinkingTextAtom = atom('');
 
+// ── Session plugin atoms ────────────────────────────────
+
+export interface SessionMeta {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export const sessionsIndexAtom = atom<SessionMeta[]>([]);
+export const currentSessionIdAtom = atom<string>('');
+export const showSessionListAtom = atom(false);
+export const selectedSessionIndexAtom = atom(0);
+/** Set by UI when user picks a session; the plugin picks it up and performs the switch */
+export const sessionSwitchAtom = atom<string | null>(null);
+
 /** 工具调用列表 */
 export const toolCallsAtom = atom<
   Array<{
@@ -95,7 +111,7 @@ export const toolCallsAtom = atom<
 >([]);
 
 /** InputBar 右侧状态动画（内部状态机） */
-export type InputBarStatus = 'idle' | 'thinking' | 'calling_tool' | 'completed' | 'error';
+export type InputBarStatus = 'idle'| 'completed' | 'error';
 /** InputBar 展示信息（驱动 UI 渲染） */
 export type InputBarInfo =
   | { type: 'idle' }

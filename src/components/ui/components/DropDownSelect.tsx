@@ -11,9 +11,20 @@ import {
   selectedEffortIndexAtom,
   effortAtom,
   EFFORT_TOKENS,
+  showSessionListAtom,
+  sessionsIndexAtom,
+  selectedSessionIndexAtom,
+  sessionSwitchAtom,
+  currentSessionIdAtom,
 } from '../../../store';
 import { C } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
+
+function formatTime(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export function DropDownSelect() {
   const showModelSwitch = useSchedulState(showModelSwitchAtom);
@@ -24,6 +35,10 @@ export function DropDownSelect() {
   const effortOptions = useSchedulState(effortOptionsAtom);
   const selectedEffortIndex = useSchedulState(selectedEffortIndexAtom);
   const currentEffort = useSchedulState(effortAtom);
+  const showSessionList = useSchedulState(showSessionListAtom);
+  const sessions = useSchedulState(sessionsIndexAtom);
+  const selectedSessionIndex = useSchedulState(selectedSessionIndexAtom);
+  const currentSessionId = useSchedulState(currentSessionIdAtom);
 
   return (
     <Box flexDirection="column">
@@ -52,6 +67,19 @@ export function DropDownSelect() {
           selectedIndex={selectedModelIndex}
           title="select a model:"
           emptyMessage="no models available"
+        />
+      )}
+
+      {showSessionList && (
+        <CommandDropdown
+          items={sessions.map((s) => ({
+            key: s.id,
+            label: `${s.title}  ${formatTime(s.createdAt)}`,
+            suffix: s.id === currentSessionId ? { text: '(active)', color: C.success } : undefined,
+          }))}
+          selectedIndex={selectedSessionIndex}
+          title="select a session:"
+          emptyMessage="no sessions yet"
         />
       )}
     </Box>
