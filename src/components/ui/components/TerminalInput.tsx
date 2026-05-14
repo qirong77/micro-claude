@@ -668,7 +668,7 @@ export function TerminalInput(props: {
 // rapid bursts into a single deferred event.  The real emit is fired once the
 // stream goes quiet for DEBOUNCE_MS, so ink sees exactly one resize per drag.
 
-const DEBOUNCE_MS = 2000;
+const DEBOUNCE_MS = 1000 * 60;
 
 (function patchResizeDebounce() {
   // Keep a reference to the real emit so we can forward all non-resize events
