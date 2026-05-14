@@ -1,9 +1,35 @@
 import { Box, render, Text, useApp, useInput, usePaste } from 'ink';
 import React, { useRef, useState } from 'react';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { homedir } from 'node:os';
 import { useSchedulState } from '../hooks';
 import { inputBarStatusAtom } from '../../../store';
 
-const HistoryInputs = ['hello', 'world'];
+const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
+const MAX_HISTORY = 100;
+
+function loadHistory(): string[] {
+  try {
+    const data = readFileSync(HISTORY_FILE, 'utf-8');
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed.slice(-MAX_HISTORY) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(history: string[]) {
+  try {
+    const dir = resolve(homedir(), '.mica');
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    writeFileSync(HISTORY_FILE, JSON.stringify(history), 'utf-8');
+  } catch {
+    // silently ignore disk errors
+  }
+}
+
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +68,7 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
     value: '',
     cursor: 0,
   });
+  const [HistoryInputs,setHistoryInputs] = useState(loadHistory());
   const status = useSchedulState(inputBarStatusAtom)
   // ── History navigation state ───────────────────────────────────────────────
   //
@@ -91,6 +118,17 @@ export function TerminalInput(props: { onSubmit: (value: string) => void }) {
   useInput((ch, key) => {
     // ── Enter (no modifier) → submit ──────────────────────────────────────────
     if (key.return && !key.shift && !key.meta) {
+      const trimmed = value.trim();
+      if (trimmed) {
+        setHistoryInputs((prev) => {
+          // deduplicate: if same as last entry, don't add again
+          if (prev[prev.length - 1] === trimmed) return prev;
+          const next = [...prev, trimmed];
+          const clipped = next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
+          saveHistory(clipped);
+          return clipped;
+        });
+      }
       props.onSubmit(value);
       setState({
         value: '',
