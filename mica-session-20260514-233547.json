@@ -1,0 +1,59 @@
+[
+  {
+    "role": "user",
+    "content": "你好"
+  },
+  {
+    "id": "75502d84-00a2-4871-add6-fa4a9d64a5f7",
+    "type": "message",
+    "role": "assistant",
+    "model": "deepseek-v4-flash",
+    "content": [
+      {
+        "type": "text",
+        "text": "你好！我是 Mica Code，一个轻量级编程辅助工具。有什么我可以帮你的吗？"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 109,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1792,
+      "output_tokens": 22,
+      "service_tier": "standard"
+    },
+    "parsed_output": null
+  },
+  {
+    "role": "user",
+    "content": "你是什么模型"
+  },
+  {
+    "id": "7bb1bd93-9f87-4ab8-a862-14d93df0d7c0",
+    "type": "message",
+    "role": "assistant",
+    "model": "deepseek-v4-flash",
+    "content": [
+      {
+        "type": "text",
+        "text": "我是 Mica Code，一个基于 AI 的轻量级编程辅助工具（CLI）。我的职责是帮助你完成软件工程相关的任务，包括编写代码、调试问题、解释代码、重构、文件操作等。"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 9,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1920,
+      "output_tokens": 46,
+      "service_tier": "standard"
+    },
+    "parsed_output": null
+  },
+  {
+    "role": "user",
+    "content": "清空",
+    "status": "clear"
+  }
+]
