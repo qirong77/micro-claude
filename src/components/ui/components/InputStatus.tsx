@@ -5,8 +5,6 @@ import {
   inputBarInfoAtom,
   modelAtom,
   effortAtom,
-  modelOptionsAtom,
-  effortOptionsAtom,
 } from '../../../store';
 import { C } from '../data.js';
 import { IfComponent } from './common/IfComponent';
@@ -26,12 +24,20 @@ export function InputStatus() {
   const effort = useSchedulState(effortAtom);
 
   return (
-    <Box flexDirection="row" justifyContent="space-between">
-      <IfComponent condition={inputBarInfoAtom.get().type === 'error'}>
-        <Box width="100%" flexDirection="row" justifyContent="space-between" paddingX={2}>
-          <Text color={C.error}>✗ {info.type ?? 'Error'}</Text>
+    <Box flexDirection="row" justifyContent="space-between" paddingX={2}>
+      <IfComponent condition={info.type === 'error'}>
+        <Box width="100%" flexDirection="row" justifyContent="space-between" >
+          <Text color={C.error}>✗ {info.type === 'error' ? info.message : 'Error'}</Text>
         </Box>
       </IfComponent>
+      <IfComponent condition={info.type === 'completed'}>
+        <Box width="100%" flexDirection="row" justifyContent="space-between" >
+          <Text color={C.success}>✓ {info.type === 'completed' && info.elapsedMs != null ? formatElapsed(info.elapsedMs) : 'Done'}</Text>
+        </Box>
+      </IfComponent>
+      <Box>
+        <Text>{' '}</Text>
+      </Box>
       <Box>
         <Text color={C.dim}>
           {model} · {effort}

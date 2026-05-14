@@ -666,7 +666,6 @@ export function TerminalInput(props: {
         />
       )}
 
-      <InputStatus />
     </Box>
   );
 }

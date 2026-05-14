@@ -9,7 +9,6 @@ ui.onUserSubmit(async (text) => {
   const startTime = Date.now();
   try {
     inputBarStatusAtom.set('thinking');
-    inputBarInfoAtom.set({ type: 'thinking' });
     await agentTurn.run(text, () => {
       statusesAtom.set([]);
       thinkingTextAtom.set('');
