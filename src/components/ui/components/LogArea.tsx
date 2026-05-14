@@ -50,7 +50,12 @@ export const LogArea = (): React.ReactNode => {
       ];
     }
     if (msg.role === 'assistant') {
-      text = '🤖: \n' + text
+      const isMarkdownBlockStart = text.startsWith('```');
+      if (isMarkdownBlockStart) {
+        text = '🤖:\n ' + text;
+      } else {
+        text = '🤖: ' + text;
+      }
       const lines: LogItem[] = text.split('\n').map((line, j) => ({
         id: `${i}-${j}`,
         role: msg.role as 'assistant',
@@ -74,8 +79,8 @@ export const LogArea = (): React.ReactNode => {
   }
 
   // Precompute block types for all assistant lines to enable context-aware margins
-  const assistantLines = staticItems.filter(it => it.role === 'assistant');
-  const blockTypes: BlockType[] = assistantLines.map(it => classifyLine(it.text));
+  const assistantLines = staticItems.filter((it) => it.role === 'assistant');
+  const blockTypes: BlockType[] = assistantLines.map((it) => classifyLine(it.text));
   return (
     <Box flexDirection="column">
       <Static items={staticItems}>
@@ -92,7 +97,7 @@ export const LogArea = (): React.ReactNode => {
               </Box>
             );
           }
-          const idx = assistantLines.findIndex(l => l.id === item.id);
+          const idx = assistantLines.findIndex((l) => l.id === item.id);
           const prevType = idx > 0 ? blockTypes[idx - 1] : undefined;
           const nextType = idx < blockTypes.length - 1 ? blockTypes[idx + 1] : undefined;
           return (

@@ -42,13 +42,13 @@ export function InputStatus() {
   })();
 
   return (
-    <Box flexDirection="row" paddingX={2}>
+    <Box flexDirection="row">
       <Box flexGrow={1} flexShrink={1}>
         {content}
       </Box>
       <Box flexShrink={0}>
         <Text color={C.dim} wrap="wrap">
-          {model}·{effort}
+          {model} · {effort}
         </Text>
       </Box>
     </Box>
