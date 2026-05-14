@@ -99,8 +99,13 @@ export const LogArea = (): React.ReactNode => {
           if (item.type === 'clear') {
             return (
               <Box key={item.id} paddingLeft={1} paddingY={2}>
-                <Text bold>* — — — — — — — — — — — — — — *</Text>
-
+                <Text color="#FFB6C1">✦</Text>
+                <Text> </Text>
+                <Text bold color="#FF69B4">
+                  ~*~ clear! ~*~
+                </Text>
+                <Text> </Text>
+                <Text color="#FFB6C1">✦</Text>
               </Box>
             );
           }
