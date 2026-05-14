@@ -611,6 +611,7 @@ export function TerminalInput(props: {
        */}
       <Box
         borderStyle="round"
+        borderColor={C.dim}
         borderLeft={false}
         borderRight={false}
         width="100%"

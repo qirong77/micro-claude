@@ -8,6 +8,7 @@ export const C = {
   success: '#4CAF50',
   error: '#F44336',
   cyan: '#26C6DA',
+  dim: '#7b7b7b',
 } as const;
 
 // ── Quick commands ──────────────────────────────────────
