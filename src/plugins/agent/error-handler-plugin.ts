@@ -1,7 +1,6 @@
 import type { IterationResult } from '../../components/agent/agentTurn';
 import Anthropic from '@anthropic-ai/sdk';
 import { MicaPlugin } from '../MicaPlugin';
-import { uuid } from '../../utils/uuid';
 
 // ── Retry configuration ──
 
@@ -24,37 +23,30 @@ function isRetryable(error: unknown): boolean {
  */
 export class ErrorHandlerPlugin extends MicaPlugin {
   onInstall(): void {
-    const originalRun = this.agent.agentTurn.run.bind(this.agent.agentTurn);
-    const store = this.store;
-    const showStatus = this.showStatus;
-    this.agent.agentTurn.run = async function (
-      userInput: string,
-      onIteration?: (result: IterationResult) => void,
-    ) {
-      // 外层重试：当一轮完整对话（可能包含多次工具调用）因网络错误失败时重试
+    this.agent.agentTurn.use(async (userInput, next, onIteration) => {
       let attempt = 0;
       while (attempt < RETRY_MAX_ATTEMPTS) {
         try {
-          return await originalRun(userInput, onIteration);
+          return await next(userInput, onIteration);
         } catch (error) {
           attempt++;
           if (!isRetryable(error) || attempt >= RETRY_MAX_ATTEMPTS) throw error;
-          showStatus(String(error))
           const delay = Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS);
-          console.error(`[ErrorHandler] 第 ${attempt} 次重试失败，${delay / 1000}s 后重试...`);
           let restTime = delay / 1000;
+          const statusId = this.showStatus(`第 ${attempt} 次重试失败，${restTime}s 后重试...`);
           const timer = setInterval(() => {
-            showStatus(`[ErrorHandler] 第 ${attempt} 次重试失败，${restTime}s 后重试...`);
             restTime -= 1;
+            this.showStatus(`第 ${attempt} 次重试失败，${restTime}s 后重试...`);
           }, 1000);
           await new Promise((resolve) =>
             setTimeout(() => {
               clearInterval(timer);
+              this.removeStatus(statusId);
               resolve(true);
             }, delay),
           );
         }
       }
-    };
+    });
   }
 }

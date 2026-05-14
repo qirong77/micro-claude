@@ -7,15 +7,10 @@ const MAX_TOOL_RESULT_LENGTH = 10000;
 
 export class AutoCompactPlugin extends MicaPlugin {
   onInstall(): void {
-    const originalRun = this.agent.agentTurn.run.bind(this.agent.agentTurn);
-
-    this.agent.agentTurn.run = async function (
-      userInput: string,
-      callbacks?: Parameters<typeof originalRun>[1],
-    ) {
+    this.agent.agentTurn.use(async (userInput, next, onIteration) => {
       messagesAtom.set(compactMessages(messagesAtom.get()));
-      return originalRun(userInput, callbacks);
-    };
+      return next(userInput, onIteration);
+    });
   }
 }
 

@@ -11,6 +11,9 @@ export interface IterationResult {
   finalMessage: Anthropic.Message;
 }
 
+export type RunFn = (userInput: string, onIteration?: (result: IterationResult) => void) => Promise<void>;
+export type Middleware = (userInput: string, next: RunFn, onIteration?: (result: IterationResult) => void) => Promise<void>;
+
 class AgentTurn {
   private onStreamCreateFns: Array<(stream: MessageStream<null>) => void> = [];
   private onToolUseFns: Array<
@@ -21,6 +24,8 @@ class AgentTurn {
       completed: boolean,
     ) => void
   > = [];
+  private middlewares: Middleware[] = [];
+
   onStreamCreate(fn: (stream: MessageStream<null>) => void) {
     this.onStreamCreateFns.push(fn);
   }
@@ -34,6 +39,11 @@ class AgentTurn {
   ) {
     this.onToolUseFns.push(fn);
   }
+
+  use(middleware: Middleware) {
+    this.middlewares.push(middleware);
+  }
+
   async executeSingleIteration(): Promise<IterationResult> {
     const messages = messagesAtom.get();
 
@@ -106,13 +116,22 @@ class AgentTurn {
 
     return { hasToolUse, finalMessage };
   }
-  async run(userInput: string, onIteration?: (result: IterationResult) => void) {
+  private async _coreRun(userInput: string, onIteration?: (result: IterationResult) => void) {
     messagesAtom.set([...messagesAtom.get(), { role: 'user', content: userInput }]);
     while (true) {
       const result = await this.executeSingleIteration();
       onIteration?.(result);
       if (!result.hasToolUse) return;
     }
+  }
+
+  async run(userInput: string, onIteration?: (result: IterationResult) => void) {
+    const coreRun: RunFn = this._coreRun.bind(this);
+    const chain = this.middlewares.reduceRight<RunFn>(
+      (next, mw) => (input, cb) => mw(input, next, cb),
+      coreRun,
+    );
+    return chain(userInput, onIteration);
   }
 }
 

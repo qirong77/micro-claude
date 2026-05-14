@@ -1,13 +1,14 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { toolCallsAtom } from '../../../store/index.js';
+import { thinkingTextAtom, toolCallsAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
 import { Spin } from './common/Spin.js';
 import { IfComponent } from './common/IfComponent.js';
 
 export const ToolCallList = React.memo(function ToolCallList(): React.ReactNode {
   const toolCalls = useSchedulState(toolCallsAtom);
-  if (!toolCalls || toolCalls.length === 0) return null;
+  const thinkingText = useSchedulState(thinkingTextAtom)
+  if (!toolCalls || toolCalls.length === 0 || thinkingText) return null;
 
   const sorted = [...toolCalls].sort((a, b) => Number(a.completed) - Number(b.completed));
   const displayed = sorted.slice(0, 3);
