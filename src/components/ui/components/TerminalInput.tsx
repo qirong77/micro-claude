@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { useSchedulState } from '../hooks';
 import { inputBarStatusAtom } from '../../../store';
-import type { Command } from '../data.js';
+import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
@@ -483,7 +483,7 @@ export function TerminalInput(props: {
         alignItems="flex-start"
       >
         {/* Prompt glyph — mirrors PromptInputModeIndicator's ❯\u00A0 */}
-        <Text>{'❯\u00A0'}</Text>
+        <Text color={C.primary}>{'❯\u00A0'}</Text>
 
         {/* Multi-line text area */}
         <Box flexDirection="column" flexGrow={1} flexShrink={1}>
