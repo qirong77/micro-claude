@@ -14,7 +14,6 @@ import {
   showSessionListAtom,
   sessionsIndexAtom,
   selectedSessionIndexAtom,
-  sessionSwitchAtom,
   currentSessionIdAtom,
 } from '../../../store';
 import { C } from '../data.js';
