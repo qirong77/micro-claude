@@ -4,6 +4,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import type { Command } from '../components/ui/data.js';
+import { createPersistedAtom } from './createPersistenceAtom.js';
 
 dotenv.config({ override: true });
 
@@ -15,9 +16,9 @@ export const cacheDir = resolve(homedir(), '.mica');
 
 export const baseUrlAtom = atom(process.env.ANTHROPIC_BASE_URL);
 export const apiKeyAtom = atom(process.env.ANTHROPIC_API_KEY);
-export const modelAtom = atom(process.env.ANTHROPIC_MODEL || 'deepseek-v4-flash');
+export const modelAtom = createPersistedAtom('model', process.env.ANTHROPIC_MODEL || 'deepseek-v4-flash');
 export const maxTokensAtom = atom(Number(process.env.ANTHROPIC_MAX_TOKENS) || 8192);
-export const effortAtom = atom((process.env.DEEPSEEK_EFFORT as string) || 'medium');
+export const effortAtom = createPersistedAtom('effort', (process.env.DEEPSEEK_EFFORT as string) || 'medium');
 
 
 export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
