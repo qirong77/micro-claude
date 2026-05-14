@@ -15,3 +15,7 @@ statusesAtom.set([{ id: 'example', text: '演示模式' }]);
 
 ui.run();
 
+
+setTimeout(()=>{
+  messagesAtom.set([])
+},3000)
