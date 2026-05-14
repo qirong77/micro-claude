@@ -14,7 +14,7 @@ export const ThinkText = React.memo(function ThinkText(): React.ReactNode {
   const display = lines.length > MAX_LINES ? lines.slice(-MAX_LINES).join('\n') : text;
 
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box flexDirection="column">
       <Text dimColor>{display}</Text>
     </Box>
   );

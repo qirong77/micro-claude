@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 
 const primary = '#4a9eff';
-const codeText = '#fd9191';
+const codeText = '#91c1f7';
 const heading = primary;
 
 function renderInline(text: string) {

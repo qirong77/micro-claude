@@ -111,16 +111,16 @@ export const currentSessionIdAtom = atom<string>('');
 /** Set by UI when user picks a session; the plugin picks it up and performs the switch */
 export const sessionSwitchAtom = atom<string | null>(null);
 
+export interface ToolCallData {
+  id: string;
+  toolName: string;
+  toolInput: Record<string, any>;
+  completed: boolean;
+  displayText: string;
+}
+
 /** 工具调用列表 */
-export const toolCallsAtom = atom<
-  Array<{
-    id: string;
-    toolName: string;
-    toolInput: Record<string, any>;
-    completed: boolean;
-    displayText: string;
-  }>
->([]);
+export const toolCallsAtom = atom<ToolCallData[]>([]);
 
 /** InputBar 右侧状态动画（内部状态机） */
 export type InputBarStatus = 'idle' | 'completed' | 'error';

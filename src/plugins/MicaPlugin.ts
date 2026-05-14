@@ -15,6 +15,14 @@ import {
   effortOptionsAtom,
   dropdownAtom,
   dropdownSelectionAtom,
+  maxTokensAtom,
+  thinkingTextAtom,
+  sessionsIndexAtom,
+  currentSessionIdAtom,
+  sessionSwitchAtom,
+  toolCallsAtom,
+  inputBarStatusAtom,
+  inputBarInfoAtom,
 } from '../store';
 import type { Command, InputHandler, InputState, InputAction } from '../components/ui/data';
 import { addInputHandler } from '../components/ui';
@@ -41,6 +49,7 @@ export abstract class MicaPlugin {
     baseUrl: baseUrlAtom as ReadableAtom<string>,
     apiKey: apiKeyAtom as ReadableAtom<string>,
     model: modelAtom as ReadableAtom<string>,
+    maxTokens: maxTokensAtom as ReadableAtom<number>,
     modelOptions: modelOptionsAtom as WritableAtom<Array<{ name: string; label: string }>>,
     effort: effortAtom as WritableAtom<string>,
     effortOptions: effortOptionsAtom as WritableAtom<Array<{ name: string; label: string }>>,
@@ -49,6 +58,13 @@ export abstract class MicaPlugin {
     inputValue: inputValueAtom as WritableAtom<string>,
     cursor: cursorAtom as WritableAtom<number>,
     cacheDir,
+    thinkingText: thinkingTextAtom as ReadableAtom<string>,
+    sessionsIndex: sessionsIndexAtom as ReadableAtom<import('../store').SessionMeta[]>,
+    currentSessionId: currentSessionIdAtom as ReadableAtom<string>,
+    sessionSwitch: sessionSwitchAtom as WritableAtom<string | null>,
+    toolCalls: toolCallsAtom as ReadableAtom<import('../store').ToolCallData[]>,
+    inputBarStatus: inputBarStatusAtom as ReadableAtom<import('../store').InputBarStatus>,
+    inputBarInfo: inputBarInfoAtom as ReadableAtom<import('../store').InputBarInfo>,
   };
 
   /**
