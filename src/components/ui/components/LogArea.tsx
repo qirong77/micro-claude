@@ -50,7 +50,7 @@ export const LogArea = (): React.ReactNode => {
       ];
     }
     if (msg.role === 'assistant') {
-      const isMarkdownBlockStart = text.startsWith('```');
+      const isMarkdownBlockStart = text.startsWith('```') || text.startsWith('|') || text.startsWith('#') || text.startsWith('> ');
       if (isMarkdownBlockStart) {
         text = '🤖:\n ' + text;
       } else {
