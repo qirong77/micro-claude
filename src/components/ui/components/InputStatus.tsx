@@ -1,13 +1,8 @@
 import { Box, Text } from 'ink';
 import React from 'react';
 import { useSchedulState } from '../hooks';
-import {
-  inputBarInfoAtom,
-  modelAtom,
-  effortAtom,
-} from '../../../store';
+import { inputBarInfoAtom, modelAtom, effortAtom } from '../../../store';
 import { C } from '../data.js';
-import { IfComponent } from './common/IfComponent';
 
 function formatElapsed(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -22,25 +17,21 @@ export function InputStatus() {
   const info = useSchedulState(inputBarInfoAtom);
   const model = useSchedulState(modelAtom);
   const effort = useSchedulState(effortAtom);
-
   return (
-    <Box flexDirection="row" justifyContent="space-between" paddingX={2}>
-      <IfComponent condition={info.type === 'error'}>
-        <Box width="100%" flexDirection="row" justifyContent="space-between" >
-          <Text color={C.error}>✗ {info.type === 'error' ? info.message : 'Error'}</Text>
-        </Box>
-      </IfComponent>
-      <IfComponent condition={info.type === 'completed'}>
-        <Box width="100%" flexDirection="row" justifyContent="space-between" >
-          <Text color={C.success}>✓ {info.type === 'completed' && info.elapsedMs != null ? formatElapsed(info.elapsedMs) : 'Done'}</Text>
-        </Box>
-      </IfComponent>
-      <Box>
-        <Text>{' '}</Text>
+    <Box flexDirection="row" paddingX={2}>
+      <Box flexGrow={1} flexShrink={1}>
+        {info.type === 'error' && (
+          <Text color={C.error}>✗ {info.message}</Text>
+        )}
+        {info.type === 'completed' && (
+          <Text color={C.success}>
+            ✓ completed {info.elapsedMs != null ? formatElapsed(info.elapsedMs) : 'Done'}
+          </Text>
+        )}
       </Box>
-      <Box>
-        <Text color={C.dim}>
-          {model} · {effort}
+      <Box flexShrink={0}>
+        <Text color={C.dim} wrap="wrap">
+          {model}·{effort}
         </Text>
       </Box>
     </Box>

@@ -11,15 +11,13 @@ import {
   showModelSwitchAtom,
   modelOptionsAtom,
   modelAtom,
-  effortOptionsAtom,
   showEffortSwitchAtom,
+  effortOptionsAtom,
   selectedEffortIndexAtom,
   effortAtom,
-  EFFORT_TOKENS,
 } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
-import { InputStatus } from './InputStatus.js';
 import stringWidth from 'string-width';
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
@@ -164,13 +162,7 @@ export function TerminalInput(props: {
   const cursor = useSchedulState(cursorAtom);
   const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
   const showModelSwitch = useSchedulState(showModelSwitchAtom);
-  const modelOptions = useSchedulState(modelOptionsAtom);
-  const selectedModelIndex = useSchedulState(selectedModelIndexAtom);
-  const currentModel = useSchedulState(modelAtom);
   const showEffortSwitch = useSchedulState(showEffortSwitchAtom);
-  const effortOptions = useSchedulState(effortOptionsAtom);
-  const selectedEffortIndex = useSchedulState(selectedEffortIndexAtom);
-  const currentEffort = useSchedulState(effortAtom);
   const promptGlyph = '❯\u00A0';
   const totalCols = stdout?.columns ?? 80;
   const inputCols = Math.max(1, totalCols - stringWidth(promptGlyph));
@@ -633,36 +625,6 @@ export function TerminalInput(props: {
           }))}
           selectedIndex={selectedCommandIndex >= 0 ? selectedCommandIndex : 0}
           emptyMessage="no matching commands"
-        />
-      )}
-
-      {/* Effort switch dropdown */}
-      {showEffortSwitch && (
-        <CommandDropdown
-          items={effortOptions.map((opt) => ({
-            key: opt.name,
-            label: opt.label,
-            suffix: opt.name === currentEffort
-              ? { text: `(active)`, color: C.success }
-              : { text: `${EFFORT_TOKENS[opt.name]} tok`, color: C.dim },
-          }))}
-          selectedIndex={selectedEffortIndex}
-          title="select effort level:"
-          emptyMessage="no options available"
-        />
-      )}
-
-      {/* Model switch dropdown */}
-      {showModelSwitch && (
-        <CommandDropdown
-          items={modelOptions.map((opt) => ({
-            key: opt.name,
-            label: opt.label,
-            suffix: opt.name === currentModel ? { text: '(active)', color: C.success } : undefined,
-          }))}
-          selectedIndex={selectedModelIndex}
-          title="select a model:"
-          emptyMessage="no models available"
         />
       )}
 
