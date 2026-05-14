@@ -100,6 +100,7 @@ export const LogArea = (): React.ReactNode => {
             return (
               <Box key={item.id} paddingLeft={1} paddingY={2}>
                 <Text bold>* — — — — — — — — — — — — — — *</Text>
+
               </Box>
             );
           }
