@@ -49,7 +49,7 @@ export function MarkdownRenderByLine(props: { text: string }) {
     if (cells.length === 0) return null;
     const isHeader = !seenTableSeparator;
     return (
-      <Box flexDirection="row" width="100%" borderStyle="single" marginTop={isHeader ? undefined : -1}>
+      <Box flexDirection="row" width="100%" borderStyle="single" borderTop={isHeader}>
         {cells.map((cell, i) => (
           <Box key={i} flexGrow={1} flexBasis={0} overflow="hidden" paddingLeft={1} paddingRight={1}>
             <Text bold={isHeader} wrap="truncate">{cell}</Text>
