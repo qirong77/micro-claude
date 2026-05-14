@@ -25,7 +25,6 @@ import {
   inputBarInfoAtom,
 } from '../store';
 import type { Command, InputHandler, InputState, InputAction } from '../components/ui/data';
-import { addInputHandler } from '../components/ui';
 import type Anthropic from '@anthropic-ai/sdk';
 import type { ReadableAtom, WritableAtom } from 'nanostores';
 import { uuid } from '../utils/uuid';
@@ -72,11 +71,6 @@ export abstract class MicaPlugin {
    * 此时 `this.agent` 已可用。
    */
   abstract onInstall(): void | Promise<void>;
-
-  /** 注册一个输入处理器，返回取消注册函数 */
-  protected registerInputHandler(handler: InputHandler): () => void {
-    return addInputHandler(handler);
-  }
 
   /** 添加一个快速命令 */
   protected addQuickCommand(command: Command): void {

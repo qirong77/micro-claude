@@ -8,23 +8,6 @@ import { useSchedulState } from './hooks/useSchedulState.js';
 // ── onSubmit callback — called when user submits free-form text (not a /command) ──
 let _onSubmit: ((text: string) => void) | null = null;
 
-// ── Input handler plugin registry ──────────────────────
-const _inputHandlers: InputHandler[] = [];
-
-/** Register an input handler. Returns an unsubscribe function. */
-export function addInputHandler(handler: InputHandler): () => void {
-  _inputHandlers.push(handler);
-  return () => {
-    const idx = _inputHandlers.indexOf(handler);
-    if (idx >= 0) _inputHandlers.splice(idx, 1);
-  };
-}
-
-/** Get all registered input handlers (called by App) */
-export function getInputHandlers(): InputHandler[] {
-  return _inputHandlers;
-}
-
 function Root() {
   const quickCommands = useSchedulState(quickCommandsAtom);
 
@@ -53,6 +36,4 @@ function onUserSubmit(cb: (text: string) => void) {
 export const ui = {
   run,
   onUserSubmit,
-  addInputHandler,
-  getInputHandlers,
 };
