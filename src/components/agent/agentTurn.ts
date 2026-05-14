@@ -9,6 +9,7 @@ import {
   inputBarStatusAtom,
   inputBarInfoAtom,
   effortAtom,
+  EFFORT_TOKENS,
 } from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
@@ -68,12 +69,12 @@ class AgentTurn {
       max_tokens: maxTokensAtom.get(),
       system: systemPrompt,
       messages,
-      thinking: {
-        type: effort === 'none' ? 'disabled' : 'enabled',
-      },
-      output_config: {
-        effort: effort,
-      },
+      thinking: effort === 'none'
+        ? { type: 'disabled' as const }
+        : { type: 'enabled' as const, budget_tokens: EFFORT_TOKENS[effort] },
+      output_config: effort !== 'none'
+        ? { effort }
+        : undefined,
       tools: toolDefinitions,
     }) as MessageStream<null>;
     this.onStreamCreateFns.forEach((fn) => fn(stream));
