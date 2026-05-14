@@ -9,7 +9,7 @@ import { MarkdownRenderByLine, classifyLine, type BlockType } from './MarkdownRe
 // ── LogArea 内部使用的消息类型 ────────────────────────────
 // Anthropic.MessageParam 不包含 status 字段，但我们需要在 UI 中区分流式消息
 interface LogMessage extends Anthropic.MessageParam {
-  status?: 'streaming';
+  status?: 'streaming' | 'clear';
 }
 
 /** 从 MessageParam.content 提取纯文本字符串 */
@@ -28,6 +28,7 @@ interface LogItem {
   id: string | number;
   role: 'user' | 'assistant';
   text: string;
+  type?: 'clear';
 }
 
 export const LogArea = (): React.ReactNode => {
@@ -38,6 +39,16 @@ export const LogArea = (): React.ReactNode => {
   const messages = useSchedulState(messagesAtom);
   const staticItems = messages.flatMap((raw, i): LogItem[] => {
     const msg = raw as LogMessage;
+    if (msg.status === 'clear') {
+      return [
+        {
+          id: i,
+          role: 'user',
+          text: '',
+          type: 'clear',
+        },
+      ];
+    }
     let text = getTextContent(msg.content);
     if (!text) return [];
     if (msg.role === 'user') {
@@ -85,6 +96,13 @@ export const LogArea = (): React.ReactNode => {
     <Box flexDirection="column">
       <Static items={staticItems}>
         {(item: LogItem) => {
+          if (item.type === 'clear') {
+            return (
+              <Box key={item.id} paddingLeft={1} paddingY={2}>
+                <Text bold>* — — — — — — — — — — — — — — *</Text>
+              </Box>
+            );
+          }
           if (item.role === 'user') {
             return (
               <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
