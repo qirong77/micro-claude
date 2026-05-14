@@ -7,6 +7,7 @@ import { StatusBar } from './components/StatusBar.js';
 import { ThinkText } from './components/ThinkText.js';
 import { ToolCallList } from './components/ToolCallList.js';
 import { TerminalInput } from './components/TerminalInput.js';
+import { InputStatus } from './components/InputStatus.js';
 
 interface AppProps {
   isLoading?: boolean;
@@ -18,12 +19,11 @@ export function App({
   quickCommands,
   onSubmit,
 }: AppProps): React.ReactNode {
-  const { stdout } = useStdout();
-
   return (
     <Box flexDirection="column" height="100%">
       <LogArea />
       <TerminalInput onSubmit={onSubmit} commands={quickCommands}/>
+      <InputStatus/>
       <StatusBar />
       <ToolCallList />
       <ThinkText />

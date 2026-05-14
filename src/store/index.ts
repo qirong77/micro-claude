@@ -34,13 +34,13 @@ export const cursorAtom = atom(0);
 // ── Model switch dropdown ──────────────────────────────
 
 export interface ModelOption {
-  id: string;
+  name: string;
   label: string;
 }
 
 export const modelOptionsAtom = atom<ModelOption[]>([
-  { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
-  { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
+  { name: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+  { name: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
 ]);
 
 /** Whether the model switch dropdown is active */
@@ -60,15 +60,15 @@ export const EFFORT_TOKENS: Record<EffortLevel, number> = {
 };
 
 export interface EffortOption {
-  id: EffortLevel;
+  name: EffortLevel;
   label: string;
 }
 
 export const effortOptionsAtom = atom<EffortOption[]>([
-  { id: 'none', label: 'None' },
-  { id: 'low', label: 'Low' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'high', label: 'High' },
+  { name: 'none', label: 'None' },
+  { name: 'low', label: 'Low' },
+  { name: 'medium', label: 'Medium' },
+  { name: 'high', label: 'High' },
 ]);
 
 export const showEffortSwitchAtom = atom(false);

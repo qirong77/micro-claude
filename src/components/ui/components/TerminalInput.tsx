@@ -5,7 +5,6 @@ import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { useSchedulState } from '../hooks';
 import {
-  inputBarInfoAtom,
   inputValueAtom,
   cursorAtom,
   selectedModelIndexAtom,
@@ -20,16 +19,8 @@ import {
 } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
+import { InputStatus } from './InputStatus.js';
 import stringWidth from 'string-width';
-
-function formatElapsed(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  const s = (ms / 1000).toFixed(1);
-  if (ms < 60000) return `${s}s`;
-  const m = Math.floor(ms / 60000);
-  const sec = ((ms % 60000) / 1000).toFixed(0);
-  return `${m}m ${sec}s`;
-}
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
 const MAX_HISTORY = 100;
@@ -172,7 +163,6 @@ export function TerminalInput(props: {
   const value = useSchedulState(inputValueAtom);
   const cursor = useSchedulState(cursorAtom);
   const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
-  const info = useSchedulState(inputBarInfoAtom);
   const showModelSwitch = useSchedulState(showModelSwitchAtom);
   const modelOptions = useSchedulState(modelOptionsAtom);
   const selectedModelIndex = useSchedulState(selectedModelIndexAtom);
@@ -239,7 +229,7 @@ export function TerminalInput(props: {
       const idx = selectedEffortIndexAtom.get();
       const opts = effortOptionsAtom.get();
       if (idx >= 0 && idx < opts.length) {
-        effortAtom.set(opts[idx]!.id);
+        effortAtom.set(opts[idx]!.name);
       }
       showEffortSwitchAtom.set(false);
       selectedEffortIndexAtom.set(0);
@@ -276,7 +266,7 @@ export function TerminalInput(props: {
       const idx = selectedModelIndexAtom.get();
       const opts = modelOptionsAtom.get();
       if (idx >= 0 && idx < opts.length) {
-        modelAtom.set(opts[idx]!.id);
+        modelAtom.set(opts[idx]!.name);
       }
       showModelSwitchAtom.set(false);
       selectedModelIndexAtom.set(0);
@@ -650,11 +640,11 @@ export function TerminalInput(props: {
       {showEffortSwitch && (
         <CommandDropdown
           items={effortOptions.map((opt) => ({
-            key: opt.id,
+            key: opt.name,
             label: opt.label,
-            suffix: opt.id === currentEffort
+            suffix: opt.name === currentEffort
               ? { text: `(active)`, color: C.success }
-              : { text: `${EFFORT_TOKENS[opt.id]} tok`, color: C.dim },
+              : { text: `${EFFORT_TOKENS[opt.name]} tok`, color: C.dim },
           }))}
           selectedIndex={selectedEffortIndex}
           title="select effort level:"
@@ -666,9 +656,9 @@ export function TerminalInput(props: {
       {showModelSwitch && (
         <CommandDropdown
           items={modelOptions.map((opt) => ({
-            key: opt.id,
+            key: opt.name,
             label: opt.label,
-            suffix: opt.id === currentModel ? { text: '(active)', color: C.success } : undefined,
+            suffix: opt.name === currentModel ? { text: '(active)', color: C.success } : undefined,
           }))}
           selectedIndex={selectedModelIndex}
           title="select a model:"
@@ -676,18 +666,7 @@ export function TerminalInput(props: {
         />
       )}
 
-      {info.type === 'error' && (
-        <Box paddingX={2} flexDirection="row">
-          <Text color={C.error}>✗ {info.message ?? '出错了'}</Text>
-        </Box>
-      )}
-      {info.type === 'completed' && (
-        <Box paddingX={2} flexDirection="row">
-          <Text color={C.success}>
-            ✓ 完成{info.elapsedMs != null ? ` · ${formatElapsed(info.elapsedMs)}` : ''}
-          </Text>
-        </Box>
-      )}
+      <InputStatus />
     </Box>
   );
 }

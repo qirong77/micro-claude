@@ -12,8 +12,8 @@ import {
 } from '../../store';
 
 const MODELS = [
-  { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
-  { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
+  { name: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+  { name: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
 ] as const;
 
 export class QuickCommandModelPlugin extends MicaPlugin {
@@ -24,29 +24,19 @@ export class QuickCommandModelPlugin extends MicaPlugin {
       action: (_arg?: string) => {
         modelOptionsAtom.set([...MODELS]);
         const current = modelAtom.get();
-        const idx = MODELS.findIndex((m) => m.id === current);
+        const idx = MODELS.findIndex((m) => m.name === current);
         selectedModelIndexAtom.set(idx >= 0 ? idx : 0);
         showModelSwitchAtom.set(true);
       },
     });
 
-    this.addQuickCommand({
-      name: 'model',
-      description: '查看当前模型',
-      action: () => {
-        const current = modelAtom.get();
-        const found = MODELS.find((m) => m.id === current);
-        const label = found ? found.label : current;
-        this.showStatus(`当前模型: ${label} (${current})`);
-      },
-    });
 
     this.addQuickCommand({
       name: 'model-effort',
       description: '设置推理强度 (none / low / medium / high)',
       action: () => {
         const current = effortAtom.get();
-        const idx = effortOptionsAtom.get().findIndex((e) => e.id === current);
+        const idx = effortOptionsAtom.get().findIndex((e) => e.name === current);
         selectedEffortIndexAtom.set(idx >= 0 ? idx : 0);
         showEffortSwitchAtom.set(true);
       },
