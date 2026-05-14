@@ -2,7 +2,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, modelAtom, maxTokensAtom, inputBarStatusAtom, inputBarInfoAtom, effortAtom } from '../../store';
+import {
+  messagesAtom,
+  modelAtom,
+  maxTokensAtom,
+  inputBarStatusAtom,
+  inputBarInfoAtom,
+  effortAtom,
+} from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 
@@ -11,8 +18,15 @@ export interface IterationResult {
   finalMessage: Anthropic.Message;
 }
 
-export type RunFn = (userInput: string, onIteration?: (result: IterationResult) => void) => Promise<void>;
-export type Middleware = (userInput: string, next: RunFn, onIteration?: (result: IterationResult) => void) => Promise<void>;
+export type RunFn = (
+  userInput: string,
+  onIteration?: (result: IterationResult) => void,
+) => Promise<void>;
+export type Middleware = (
+  userInput: string,
+  next: RunFn,
+  onIteration?: (result: IterationResult) => void,
+) => Promise<void>;
 
 class AgentTurn {
   private onStreamCreateFns: Array<(stream: MessageStream<null>) => void> = [];
@@ -48,23 +62,20 @@ class AgentTurn {
     const messages = messagesAtom.get();
 
     const model = modelAtom.get();
-
-    const extraParams: Record<string, unknown> = {};
-    if (model === 'deepseek-reasoner') {
-      const effortLevel = (effortAtom.get() as 'low' | 'medium' | 'high') || 'medium';
-      const budgetMap = { low: 4000, medium: 16000, high: 64000 };
-      extraParams.thinking = { type: 'enabled', budget_tokens: budgetMap[effortLevel] };
-    }
-
+    const effort = effortAtom.get();
     const stream = getClient().messages.stream({
       model,
       max_tokens: maxTokensAtom.get(),
       system: systemPrompt,
       messages,
+      thinking: {
+        type: effort === 'none' ? 'disabled' : 'enabled',
+      },
+      output_config: {
+        effort: effort,
+      },
       tools: toolDefinitions,
-      ...extraParams,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any) as MessageStream<null>;
+    }) as MessageStream<null>;
     this.onStreamCreateFns.forEach((fn) => fn(stream));
     let hasToolUse = false;
     const completedToolUses: Array<{ id: string; name: string; input: Record<string, any> }> = [];

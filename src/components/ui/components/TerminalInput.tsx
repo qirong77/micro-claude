@@ -7,18 +7,8 @@ import { useSchedulState } from '../hooks';
 import {
   inputValueAtom,
   cursorAtom,
-  selectedModelIndexAtom,
-  showModelSwitchAtom,
-  modelOptionsAtom,
-  modelAtom,
-  showEffortSwitchAtom,
-  effortOptionsAtom,
-  selectedEffortIndexAtom,
-  effortAtom,
-  showSessionListAtom,
-  sessionsIndexAtom,
-  selectedSessionIndexAtom,
-  sessionSwitchAtom,
+  dropdownAtom,
+  dropdownSelectionAtom,
 } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
@@ -165,8 +155,7 @@ export function TerminalInput(props: {
   const value = useSchedulState(inputValueAtom);
   const cursor = useSchedulState(cursorAtom);
   const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
-  const showModelSwitch = useSchedulState(showModelSwitchAtom);
-  const showEffortSwitch = useSchedulState(showEffortSwitchAtom);
+  const dropdownVisible = useSchedulState(dropdownAtom).visible;
   const promptGlyph = '❯\u00A0';
   const totalCols = stdout?.columns ?? 80;
   const inputCols = Math.max(1, totalCols - stringWidth(promptGlyph));
@@ -222,115 +211,40 @@ export function TerminalInput(props: {
   }
 
   useInput((ch, key) => {
-    // ── Effort switch: confirm selection on Enter ─────────────────────────
-    if (showEffortSwitch && key.return && !key.shift && !key.meta) {
-      const idx = selectedEffortIndexAtom.get();
-      const opts = effortOptionsAtom.get();
-      if (idx >= 0 && idx < opts.length) {
-        effortAtom.set(opts[idx]!.name);
+    const dd = dropdownAtom.get();
+
+    // ── Dropdown: confirm selection on Enter ───────────────────────────────
+    if (dd.visible && key.return && !key.shift && !key.meta) {
+      const items = dd.items;
+      const idx = dd.selectedIndex;
+      if (idx >= 0 && idx < items.length) {
+        dropdownSelectionAtom.set(items[idx]!);
       }
-      showEffortSwitchAtom.set(false);
-      selectedEffortIndexAtom.set(0);
+      dropdownAtom.set({ ...dd, visible: false, selectedIndex: 0 });
       return;
     }
 
-    // ── Effort switch: escape to close ────────────────────────────────────
-    if (showEffortSwitch && key.escape) {
-      showEffortSwitchAtom.set(false);
-      selectedEffortIndexAtom.set(0);
+    // ── Dropdown: escape to close ──────────────────────────────────────────
+    if (dd.visible && key.escape) {
+      dropdownAtom.set({ ...dd, visible: false, selectedIndex: 0 });
       return;
     }
 
-    // ── Effort switch: up/down navigation ─────────────────────────────────
-    if (showEffortSwitch) {
+    // ── Dropdown: up/down navigation ───────────────────────────────────────
+    if (dd.visible) {
+      const items = dd.items;
       if (key.upArrow) {
-        const opts = effortOptionsAtom.get();
-        selectedEffortIndexAtom.set(
-          selectedEffortIndexAtom.get() <= 0 ? opts.length - 1 : selectedEffortIndexAtom.get() - 1,
-        );
+        dropdownAtom.set({
+          ...dd,
+          selectedIndex: dd.selectedIndex <= 0 ? items.length - 1 : dd.selectedIndex - 1,
+        });
         return;
       }
       if (key.downArrow) {
-        const opts = effortOptionsAtom.get();
-        selectedEffortIndexAtom.set(
-          selectedEffortIndexAtom.get() >= opts.length - 1 ? 0 : selectedEffortIndexAtom.get() + 1,
-        );
-        return;
-      }
-    }
-
-    // ── Model switch: confirm selection on Enter ────────────────────────────
-    if (showModelSwitch && key.return && !key.shift && !key.meta) {
-      const idx = selectedModelIndexAtom.get();
-      const opts = modelOptionsAtom.get();
-      if (idx >= 0 && idx < opts.length) {
-        modelAtom.set(opts[idx]!.name);
-      }
-      showModelSwitchAtom.set(false);
-      selectedModelIndexAtom.set(0);
-      return;
-    }
-
-    // ── Model switch: escape to close ───────────────────────────────────────
-    if (showModelSwitch && key.escape) {
-      showModelSwitchAtom.set(false);
-      selectedModelIndexAtom.set(0);
-      return;
-    }
-
-    // ── Model switch: up/down navigation ────────────────────────────────────
-    if (showModelSwitch) {
-      if (key.upArrow) {
-        const opts = modelOptionsAtom.get();
-        selectedModelIndexAtom.set(
-          selectedModelIndexAtom.get() <= 0 ? opts.length - 1 : selectedModelIndexAtom.get() - 1,
-        );
-        return;
-      }
-      if (key.downArrow) {
-        const opts = modelOptionsAtom.get();
-        selectedModelIndexAtom.set(
-          selectedModelIndexAtom.get() >= opts.length - 1 ? 0 : selectedModelIndexAtom.get() + 1,
-        );
-        return;
-      }
-    }
-
-    // ── Session switch: confirm selection on Enter ─────────────────────────
-    if (showSessionListAtom.get() && key.return && !key.shift && !key.meta) {
-      const idx = selectedSessionIndexAtom.get();
-      const sessions = sessionsIndexAtom.get();
-      if (idx >= 0 && idx < sessions.length) {
-        sessionSwitchAtom.set(sessions[idx]!.id);
-      }
-      showSessionListAtom.set(false);
-      selectedSessionIndexAtom.set(0);
-      return;
-    }
-
-    // ── Session switch: escape to close ────────────────────────────────────
-    if (showSessionListAtom.get() && key.escape) {
-      showSessionListAtom.set(false);
-      selectedSessionIndexAtom.set(0);
-      return;
-    }
-
-    // ── Session switch: up/down navigation ─────────────────────────────────
-    const sessionListVisible = showSessionListAtom.get();
-    const hasSessions = sessionsIndexAtom.get().length > 0;
-    if (sessionListVisible && hasSessions) {
-      if (key.upArrow) {
-        const sessions = sessionsIndexAtom.get();
-        selectedSessionIndexAtom.set(
-          selectedSessionIndexAtom.get() <= 0 ? sessions.length - 1 : selectedSessionIndexAtom.get() - 1,
-        );
-        return;
-      }
-      if (key.downArrow) {
-        const sessions = sessionsIndexAtom.get();
-        selectedSessionIndexAtom.set(
-          selectedSessionIndexAtom.get() >= sessions.length - 1 ? 0 : selectedSessionIndexAtom.get() + 1,
-        );
+        dropdownAtom.set({
+          ...dd,
+          selectedIndex: dd.selectedIndex >= items.length - 1 ? 0 : dd.selectedIndex + 1,
+        });
         return;
       }
     }
@@ -661,7 +575,7 @@ export function TerminalInput(props: {
       </Box>
 
       {/* Command dropdown — shown when user types / */}
-      {showCommandDropdown && !showModelSwitch && (
+      {showCommandDropdown && !dropdownVisible && (
         <CommandDropdown
           items={visibleCommands.map((cmd) => ({
             key: cmd.name,
