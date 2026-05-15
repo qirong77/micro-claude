@@ -15,10 +15,10 @@ ui.TerminalInput.emitter.on('submit', async (text) => {
       ui.ThinkText.atomData.set('');
     });
     inputBarStatusAtom.set('completed');
-    ui.InputStatus.atomData.set({ type: 'completed', elapsedMs: Date.now() - startTime });
+    ui.WorkingStatus.atomData.set({ type: 'completed', elapsedMs: Date.now() - startTime });
   } catch (error) {
     inputBarStatusAtom.set('error');
-    ui.InputStatus.atomData.set({
+    ui.WorkingStatus.atomData.set({
       type: 'error',
       message: error instanceof Error ? error.message : String(error),
     });

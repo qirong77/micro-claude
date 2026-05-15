@@ -9,11 +9,11 @@ export function handleToolUseState() {
     stream.on('text', () => {
       ui.ToolCallList.atomData.set([]);
       ui.ThinkText.atomData.set('');
-      ui.InputStatus.atomData.set({ type: 'idle' });
+      ui.WorkingStatus.atomData.set({ type: 'idle' });
     });
   });
   agentTurn.onToolUse((toolUseId, toolName, toolInput, completed) => {
-    ui.InputStatus.atomData.set({ type: 'calling_tool' });
+    ui.WorkingStatus.atomData.set({ type: 'calling_tool' });
     const displayText = getToolDisplayText(toolName, toolInput);
     const existing = ui.ToolCallList.atomData.get();
     const idx = existing.findIndex((t) => t.id === toolUseId);
@@ -33,7 +33,7 @@ export function handleToolUseState() {
 
 export function handleThinking() {
   agentTurn.onStreamCreate((stream) => {
-    ui.InputStatus.atomData.set({ type: 'thinking' });
+    ui.WorkingStatus.atomData.set({ type: 'thinking' });
     let thinkingText = '';
     stream.on('thinking', (chunk) => {
       thinkingText += chunk;

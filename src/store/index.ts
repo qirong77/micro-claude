@@ -105,7 +105,7 @@ export interface ToolCallData {
 
 /** InputBar 状态机 */
 export type InputBarStatus = 'idle' | 'completed' | 'error';
-/** InputBar 展示信息（驱动 UI 渲染） — 已迁移到 InputStatusUI.atomData */
+/** InputBar 展示信息（驱动 UI 渲染） — 已迁移到 WorkingStatusUI.atomData */
 export type InputBarInfo =
   | { type: 'idle' }
   | { type: 'connecting' }

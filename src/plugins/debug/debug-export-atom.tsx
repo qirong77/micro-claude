@@ -29,7 +29,7 @@ export class DebugExportAtomPlugin extends MicaPlugin {
           // UI component atoms
           dropdown: ui.DropDown.atomData.dropdown.get(),
           dropdownSelection: ui.DropDown.atomData.selection.get(),
-          inputBarInfo: ui.InputStatus.atomData.get(),
+          inputBarInfo: ui.WorkingStatus.atomData.get(),
           thinkingText: ui.ThinkText.atomData.get(),
           toolCalls: ui.ToolCallList.atomData.get(),
           messageBarItems: [],  // MessageBar 已改为事件驱动

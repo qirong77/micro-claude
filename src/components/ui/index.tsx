@@ -8,7 +8,7 @@ import { ConversationUI } from './components/Conversation/index.js';
 import { MessageBarUI } from './components/MessageBar/index.js';
 import { ThinkTextUI } from './components/ThinkText/index.js';
 import { ToolCallListUI } from './components/ToolCallList/index.js';
-import { InputStatusUI } from './components/InputStatus/index.js';
+import { WorkingStatusUI } from './components/WorkingStatus/index.js';
 import { DropDownUI } from './components/DropDown/index.js';
 
 function Root() {
@@ -33,7 +33,7 @@ export const ui = {
   MessageBar: MessageBarUI,
   ThinkText: ThinkTextUI,
   ToolCallList: ToolCallListUI,
-  InputStatus: InputStatusUI,
+  WorkingStatus: WorkingStatusUI,
   DropDown: DropDownUI,
   run,
 };

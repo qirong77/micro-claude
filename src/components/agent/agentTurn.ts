@@ -64,7 +64,7 @@ class AgentTurn {
     const model = modelAtom.get();
     const effort = effortAtom.get();
     // 通过 UI 组件设置状态
-    ui.InputStatus.atomData.set({ type: 'connecting' });
+    ui.WorkingStatus.atomData.set({ type: 'connecting' });
     ui.MessageBar.emitter.emit('clear');
     const stream = getClient().messages.stream({
       model,
@@ -123,7 +123,7 @@ class AgentTurn {
         // 如果工具执行失败，标记为错误状态
         if (r.status === 'rejected') {
           inputBarStatusAtom.set('error');
-          ui.InputStatus.atomData.set({
+          ui.WorkingStatus.atomData.set({
             type: 'error',
             message: r.reason instanceof Error ? r.reason.message : String(r.reason),
           });
