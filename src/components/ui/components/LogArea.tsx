@@ -95,19 +95,6 @@ export const LogArea = (): React.ReactNode => {
   return (
     <Box flexDirection="column">
       {staticItems.map((item: LogItem) => {
-        if (item.type === 'clear') {
-          return (
-            <Box key={item.id} paddingLeft={1} paddingY={2}>
-              <Text color="#FFB6C1">✦</Text>
-              <Text> </Text>
-              <Text bold color="#FF69B4">
-                ~*~ clear! ~*~
-              </Text>
-              <Text> </Text>
-              <Text color="#FFB6C1">✦</Text>
-            </Box>
-          );
-        }
         if (item.role === 'user') {
           return (
             <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
