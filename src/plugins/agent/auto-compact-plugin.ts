@@ -1,14 +1,13 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { MicaPlugin } from '../MicaPlugin';
-import { messagesAtom } from '../../components/agent/requestConfigAtom.js';
 
 const MAX_TOOL_RESULT_LENGTH = 10000;
 
 export class AutoCompactPlugin extends MicaPlugin {
   onInstall(): void {
     this.agent.agentTurn.use(async (userInput, next, onIteration) => {
-      const compacted = compactMessages(messagesAtom.get());
-      messagesAtom.set(compacted);
+      const compacted = compactMessages(this.atoms.messages.get());
+      this.atoms.messages.set(compacted);
       return next(userInput, onIteration);
     });
   }

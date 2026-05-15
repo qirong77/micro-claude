@@ -1,11 +1,5 @@
-import { MicaPlugin } from '../MicaPlugin';
-import {
-  modelAtom,
-  effortAtom,
-  modelOptionsAtom,
-  effortOptionsAtom,
-  type EffortLevel,
-} from '../../components/agent/requestConfigAtom.js';
+import { MicaPlugin, type PluginAtoms } from '../MicaPlugin';
+import type { EffortLevel } from '../../components/agent/requestConfigAtom.js';
 
 export class QuickCommandModelPlugin extends MicaPlugin {
   onInstall(): void {
@@ -13,10 +7,10 @@ export class QuickCommandModelPlugin extends MicaPlugin {
       name: 'model',
       description: '切换模型与推理强度',
       action: () => {
-        const currentModel = modelAtom.get();
-        const currentEffort = effortAtom.get();
-        const models = modelOptionsAtom.get();
-        const efforts = effortOptionsAtom.get();
+        const currentModel = this.atoms.model.get();
+        const currentEffort = this.atoms.effort.get();
+        const models = this.atoms.modelOptions.get();
+        const efforts = this.atoms.effortOptions.get();
 
         const items = models.flatMap((m) =>
           efforts.map((e) => {
@@ -52,8 +46,8 @@ export class QuickCommandModelPlugin extends MicaPlugin {
       if (!item) return;
       const parts = item.key.split('::');
       if (parts.length === 2) {
-        modelAtom.set(parts[0]);
-        effortAtom.set(parts[1] as EffortLevel);
+        this.atoms.model.set(parts[0]);
+        this.atoms.effort.set(parts[1] as EffortLevel);
       }
     });
   }

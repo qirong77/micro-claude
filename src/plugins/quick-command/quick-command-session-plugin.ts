@@ -3,9 +3,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { atom } from 'nanostores';
 import { MicaPlugin } from '../MicaPlugin';
-import { messagesAtom } from '../../components/agent/requestConfigAtom.js';
 
-// ── Session 相关类型与 atom（插件内部闭环） ────────────
+// ── Session 相关类型与 atom ────────────────────────────
 
 export interface SessionMeta {
   id: string;
@@ -16,7 +15,6 @@ export interface SessionMeta {
 
 export const sessionsIndexAtom = atom<SessionMeta[]>([]);
 export const currentSessionIdAtom = atom<string>('');
-/** Set by UI when user picks a session; the plugin picks it up and performs the switch */
 export const sessionSwitchAtom = atom<string | null>(null);
 
 const SESSIONS_DIR = resolve(process.env.HOME || '~', '.mica', 'sessions');
@@ -57,13 +55,13 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
 
   onInstall(): void {
     const index = loadIndexSync();
-    sessionsIndexAtom.set(index);
+    this.atoms.sessionsIndex.set(index);
 
-    sessionsIndexAtom.listen(async (val) => {
+    this.atoms.sessionsIndex.listen(async (val) => {
       await saveIndex([...val]);
     });
 
-    sessionSwitchAtom.listen((sessionId) => {
+    this.atoms.sessionSwitch.listen((sessionId) => {
       if (!sessionId) return;
       this._switchToSession(sessionId);
     });
@@ -88,7 +86,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   }
 
   private _startAutoSave() {
-    this._autoSaveUnsub = this.store.messages.listen((messages) => {
+    this._autoSaveUnsub = this.atoms.messages.listen((messages) => {
       if (this._suppressAutoSave) return;
       if (!this._currentSessionId || messages.length === 0) return;
 
@@ -101,7 +99,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   }
 
   private async _saveSession() {
-    const messages = this.store.messages.get();
+    const messages = this.atoms.messages.get();
     if (messages.length === 0) {
       this.showMessage('没有对话可保存');
       return;
@@ -126,9 +124,9 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
 
     await this._persistMessages(id, messages);
 
-    const idx = [...sessionsIndexAtom.get(), meta];
-    sessionsIndexAtom.set(idx);
-    currentSessionIdAtom.set(id);
+    const idx = [...this.atoms.sessionsIndex.get(), meta];
+    this.atoms.sessionsIndex.set(idx);
+    this.atoms.currentSessionId.set(id);
     this._currentSessionId = id;
 
     this.showMessage(`会话已保存: ${fullTitle}`);
@@ -142,15 +140,15 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   }
 
   private async _updateSessionTimestamp(id: string) {
-    const idx = sessionsIndexAtom.get();
+    const idx = this.atoms.sessionsIndex.get();
     const updated = idx.map((s) =>
       s.id === id ? { ...s, updatedAt: Date.now() } : s,
     );
-    sessionsIndexAtom.set(updated);
+    this.atoms.sessionsIndex.set(updated);
   }
 
   private _showSessionList() {
-    const idx = sessionsIndexAtom.get();
+    const idx = this.atoms.sessionsIndex.get();
     if (idx.length === 0) {
       this.showMessage('没有已保存的对话');
       return;
@@ -186,11 +184,11 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
     this._suppressAutoSave = true;
     if (this._pendingAutoSave) clearTimeout(this._pendingAutoSave);
 
-    const currentMessages = this.store.messages.get();
+    const currentMessages = this.atoms.messages.get();
     if (currentMessages.length > 0) {
-      messagesAtom.set([...currentMessages, { role: 'user', content: '清空', status: 'clear' } as any]);
+      this.atoms.messages.set([...currentMessages, { role: 'user', content: '清空', status: 'clear' } as any]);
       await new Promise((r) => setTimeout(r, 16));
-      messagesAtom.set([]);
+      this.atoms.messages.set([]);
     }
 
     const filePath = resolve(SESSIONS_DIR, `${sessionId}.json`);
@@ -199,9 +197,9 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       const msgs = JSON.parse(raw);
       this._currentSessionId = sessionId;
       this._suppressAutoSave = false;
-      messagesAtom.set(msgs);
-      currentSessionIdAtom.set(sessionId);
-      const meta = sessionsIndexAtom.get().find((s) => s.id === sessionId);
+      this.atoms.messages.set(msgs);
+      this.atoms.currentSessionId.set(sessionId);
+      const meta = this.atoms.sessionsIndex.get().find((s) => s.id === sessionId);
       this.showMessage(`已切换到: ${meta?.title || sessionId}`);
     } catch {
       this._suppressAutoSave = false;

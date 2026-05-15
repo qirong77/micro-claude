@@ -2,6 +2,8 @@ import { agentTurn } from '../components/agent/agentTurn';
 import { ui } from '../components/ui';
 import { inputBarStatusAtom } from '../components/ui/components/WorkingStatus/index.js';
 import { handleToolUseState, handleStreamText, handleThinking } from './handleUIFlush';
+import { messagesAtom, modelAtom, effortAtom, modelOptionsAtom, effortOptionsAtom } from '../components/agent/requestConfigAtom.js';
+import { sessionsIndexAtom, currentSessionIdAtom, sessionSwitchAtom } from '../plugins/quick-command/quick-command-session-plugin.js';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 
 // ── 用户提交入口 ──
@@ -47,6 +49,16 @@ export const MicaAgent = {
   /** 安装插件 */
   usePlugin: async (plugin: MicaPlugin) => {
     plugin.agent = MicaAgent;
+    plugin.atoms = {
+      messages: messagesAtom,
+      model: modelAtom,
+      effort: effortAtom,
+      modelOptions: modelOptionsAtom,
+      effortOptions: effortOptionsAtom,
+      sessionsIndex: sessionsIndexAtom,
+      currentSessionId: currentSessionIdAtom,
+      sessionSwitch: sessionSwitchAtom,
+    };
     await plugin.onInstall();
     _installedPlugins.push(plugin);
     return plugin;
