@@ -1,7 +1,8 @@
-import { Box } from "@anthropic/ink";
+import { Box, Text } from "@anthropic/ink";
 import React from "react";
 import { useCallback, useState } from "react";
 import { SimpleTextInput } from "./Input";
+import { C } from "../../data";
 
 export function TerminalInput(props:{
   onSubmit:Function
@@ -72,7 +73,7 @@ export function TerminalInput(props:{
         width="100%"
       >
         <Box marginLeft={1} marginRight={1}>
-          <Text>&gt;</Text>
+          <Text bold color={C.primary}>&gt;</Text>
         </Box>
         <Box flexGrow={1} flexShrink={1}>
           <SimpleTextInput
