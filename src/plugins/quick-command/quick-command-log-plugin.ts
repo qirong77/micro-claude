@@ -18,7 +18,7 @@ export class QuickCommandLogPlugin extends MicaPlugin {
         const messages = rawMessages.filter((m: any) => m.status !== 'clear');
 
         if (messages.length === 0) {
-          this.showStatus('没有会话记录可导出');
+          this.showMessage('没有会话记录可导出');
           return;
         }
 
@@ -39,10 +39,10 @@ export class QuickCommandLogPlugin extends MicaPlugin {
 
         try {
           await writeFile(filePath, JSON.stringify(messages, null, 2), 'utf-8');
-          this.showStatus(`会话记录已导出: ${filename}`);
+          this.showMessage(`会话记录已导出: ${filename}`);
         } catch (error) {
           const errMsg = error instanceof Error ? error.message : String(error);
-          this.showStatus(`导出失败: ${errMsg}`);
+          this.showMessage(`导出失败: ${errMsg}`);
         }
       },
     });

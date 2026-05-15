@@ -91,8 +91,8 @@ export const dropdownSelectionAtom = atom<DropdownItem | null>(null);
 
 // ── UI 状态 atoms ──────────────────────────────────────
 
-/** 通用状态栏消息 */
-export const statusesAtom = atom<Array<{ id: string; text: string }>>([]);
+/** MessageBar 消息列表 */
+export const messageBarItemsAtom = atom<Array<{ id: string; text: string }>>([]);
 
 /** 大模型思考文案（当前流式输出） */
 export const thinkingTextAtom = atom('');

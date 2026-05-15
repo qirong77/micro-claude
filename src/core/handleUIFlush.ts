@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { agentTurn } from '../components/agent/agentTurn';
-import { messagesAtom, statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
+import { messagesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
 import { getToolDisplayText } from '../components/tools';
 import { uuid } from '../utils/uuid';
 

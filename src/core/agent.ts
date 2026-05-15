@@ -1,6 +1,6 @@
 import { agentTurn } from '../components/agent/agentTurn';
 import { ui } from '../components/ui';
-import { statusesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
+import { messageBarItemsAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
 import { handleToolUseState, handleStreamText, handleThinking } from './handleUIFlush';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 
@@ -11,7 +11,7 @@ ui.onUserSubmit(async (text) => {
   inputBarStatusAtom.set('idle');
   try {
     await agentTurn.run(text, () => {
-      statusesAtom.set([]);
+      messageBarItemsAtom.set([]);
       thinkingTextAtom.set('');
     });
     inputBarStatusAtom.set('completed');
@@ -28,7 +28,7 @@ ui.onUserSubmit(async (text) => {
 });
 agentTurn.onStreamCreate((stream) => {
   stream.on('end', () => {
-    statusesAtom.set([]);
+    messageBarItemsAtom.set([]);
     thinkingTextAtom.set('');
     toolCallsAtom.set([]);
   });

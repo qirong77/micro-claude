@@ -33,15 +33,15 @@ export class ErrorHandlerPlugin extends MicaPlugin {
           if (!isRetryable(error) || attempt >= RETRY_MAX_ATTEMPTS) throw error;
           const delay = Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS);
           let restTime = delay / 1000;
-          const statusId = this.showStatus(`第 ${attempt} 次重试失败，${restTime}s 后重试...`);
+          const msgId = this.showMessage(`第 ${attempt} 次重试失败，${restTime}s 后重试...`);
           const timer = setInterval(() => {
             restTime -= 1;
-            this.showStatus(`第 ${attempt} 次重试失败，${restTime}s 后重试...`);
+            this.showMessage(`第 ${attempt} 次重试失败，${restTime}s 后重试...`);
           }, 1000);
           await new Promise((resolve) =>
             setTimeout(() => {
               clearInterval(timer);
-              this.removeStatus(statusId);
+              this.removeMessage(msgId);
               resolve(true);
             }, delay),
           );

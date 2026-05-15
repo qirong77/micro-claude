@@ -89,7 +89,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   private async _saveSession() {
     const messages = this.store.messages.get();
     if (messages.length === 0) {
-      this.showStatus('没有对话可保存');
+      this.showMessage('没有对话可保存');
       return;
     }
 
@@ -117,7 +117,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
     currentSessionIdAtom.set(id);
     this._currentSessionId = id;
 
-    this.showStatus(`会话已保存: ${fullTitle}`);
+    this.showMessage(`会话已保存: ${fullTitle}`);
   }
 
   private async _persistMessages(id: string, messages: readonly any[]) {
@@ -138,7 +138,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   private _showSessionList() {
     const index = this.store.sessionsIndex.get();
     if (index.length === 0) {
-      this.showStatus('没有已保存的对话');
+      this.showMessage('没有已保存的对话');
       return;
     }
 
@@ -185,10 +185,10 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       messagesAtom.set(messages);
       currentSessionIdAtom.set(sessionId);
       const meta = this.store.sessionsIndex.get().find((s) => s.id === sessionId);
-      this.showStatus(`已切换到: ${meta?.title || sessionId}`);
+      this.showMessage(`已切换到: ${meta?.title || sessionId}`);
     } catch {
       this._suppressAutoSave = false;
-      this.showStatus('加载会话失败');
+      this.showMessage('加载会话失败');
     }
   }
 }

@@ -2,7 +2,7 @@ import { ui } from '..';
 import {
   messagesAtom,
   quickCommandsAtom,
-  statusesAtom,
+  messageBarItemsAtom,
 } from '../../../store';
 import mockSession from './example-session.json'
 
@@ -11,7 +11,7 @@ quickCommandsAtom.set([
   { name: 'help', description: '查看帮助', action: () => {} },
   { name: 'clear', description: '清空对话', action: () => {} },
 ]);
-statusesAtom.set([{ id: 'example', text: '演示模式' }]);
+messageBarItemsAtom.set([{ id: 'example', text: '演示模式' }]);
 
 ui.run();
 

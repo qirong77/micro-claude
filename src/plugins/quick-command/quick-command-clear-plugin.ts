@@ -18,7 +18,7 @@ export class QuickCommandClearPlugin extends MicaPlugin {
         messagesAtom.set([...messagesAtom.get(), { role: 'user', content: '清空',status:'clear' }]);
         // 下一 tick 再清空，确保 Static 有被驱动渲染
         setTimeout(() => messagesAtom.set([]), 16);
-        this.showStatus('对话已清空');
+        this.showMessage('对话已清空');
       },
     });
   }

@@ -22,7 +22,7 @@ export class DebugExportAtomPlugin extends MicaPlugin {
           effortOptions: s.effortOptions.get(),
           dropdown: s.dropdown.get(),
           dropdownSelection: s.dropdownSelection.get(),
-          statuses: s.statuses.get(),
+          messageBarItems: s.messageBarItems.get(),
           thinkingText: s.thinkingText.get(),
           sessionsIndex: s.sessionsIndex.get(),
           currentSessionId: s.currentSessionId.get(),
@@ -36,7 +36,7 @@ export class DebugExportAtomPlugin extends MicaPlugin {
 
         const path = resolve(process.cwd(), `atom-export-${Date.now()}.json`);
         await writeFile(path, JSON.stringify(data, null, 2), 'utf-8');
-        this.showStatus(`Atom 数据已导出到 ${path}`);
+        this.showMessage(`Atom 数据已导出到 ${path}`);
       },
     });
   }

@@ -3,7 +3,7 @@ import { Box, useInput, useStdout } from 'ink';
 import type { Command } from './data.js';
 
 import { LogArea } from './components/LogArea.js';
-import { StatusBar } from './components/StatusBar.js';
+import { MessageBar } from './components/MessageBar.js';
 import { ThinkText } from './components/ThinkText.js';
 import { ToolCallList } from './components/ToolCallList.js';
 import { TerminalInput } from './components/TerminalInput.js';
@@ -23,7 +23,7 @@ export function App({ quickCommands, onSubmit }: AppProps): React.ReactNode {
       <TerminalInput onSubmit={onSubmit} commands={quickCommands} />
       <InputStatus />
       <DropDownSelect />
-      <StatusBar />
+      <MessageBar />
       <ToolCallList />
       <ThinkText />
       <Box paddingBottom={1} />

@@ -3,7 +3,7 @@ import {
   messagesAtom,
   isLoadingAtom,
   quickCommandsAtom,
-  statusesAtom,
+  messageBarItemsAtom,
   baseUrlAtom,
   apiKeyAtom,
   modelAtom,
@@ -44,7 +44,7 @@ export abstract class MicaPlugin {
     messages: messagesAtom as ReadableAtom<Anthropic.MessageParam[]>,
     isLoading: isLoadingAtom as ReadableAtom<boolean>,
     quickCommands: quickCommandsAtom as WritableAtom<Command[]>,
-    statuses: statusesAtom as WritableAtom<Array<{ id: string; text: string }>>,
+    messageBarItems: messageBarItemsAtom as WritableAtom<Array<{ id: string; text: string }>>,
     baseUrl: baseUrlAtom as ReadableAtom<string>,
     apiKey: apiKeyAtom as ReadableAtom<string>,
     model: modelAtom as ReadableAtom<string>,
@@ -77,21 +77,21 @@ export abstract class MicaPlugin {
     this.store.quickCommands.set([...this.store.quickCommands.get(), command]);
   }
 
-  /** 显示一条状态信息 */
-  protected showStatus(text: string): string {
-    const statusId = `status-${uuid()}`;
-    this.store.statuses.set([{ id: statusId, text }]);
-    return statusId;
+  /** 显示一条消息 */
+  protected showMessage(text: string): string {
+    const msgId = `msg-${uuid()}`;
+    this.store.messageBarItems.set([{ id: msgId, text }]);
+    return msgId;
   }
 
-  /** 移除指定 ID 的状态 */
-  protected removeStatus(id: string): void {
-    this.store.statuses.set(this.store.statuses.get().filter((s) => s.id !== id));
+  /** 移除指定 ID 的消息 */
+  protected removeMessage(id: string): void {
+    this.store.messageBarItems.set(this.store.messageBarItems.get().filter((s) => s.id !== id));
   }
 
-  /** 清除所有状态 */
-  protected clearStatuses(): void {
-    this.store.statuses.set([]);
+  /** 清除所有消息 */
+  protected clearMessages(): void {
+    this.store.messageBarItems.set([]);
   }
 
   /** 获取当前消息列表 */
