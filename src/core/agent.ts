@@ -26,7 +26,7 @@ ui.TerminalInput.emitter.on('submit', async (text) => {
   }
 });
 
-agentTurn.onStreamCreate((stream) => {
+agentTurn.events.on('stream:create', (stream) => {
   stream.on('end', () => {
     ui.MessageBar.emitter.emit('clear');
     ui.ThinkText.atomData.set('');

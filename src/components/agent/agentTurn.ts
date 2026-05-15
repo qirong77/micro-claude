@@ -13,6 +13,16 @@ import { ui } from '../ui/index.js';
 import { inputBarInfoAtom } from '../ui/components/WorkingStatus/index.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
+import mitt from 'mitt';
+
+// ── Event types ────────────────────────────────────────
+
+export type AgentTurnEvents = {
+  'stream:create': MessageStream<null>;
+  'tool:use': { toolUseId: string; toolName: string; toolInput: Record<string, any>; completed: boolean };
+};
+
+// ── Public types ───────────────────────────────────────
 
 export interface IterationResult {
   hasToolUse: boolean;
@@ -30,30 +40,10 @@ export type Middleware = (
 ) => Promise<void>;
 
 class AgentTurn {
-  private onStreamCreateFns: Array<(stream: MessageStream<null>) => void> = [];
-  private onToolUseFns: Array<
-    (
-      toolUseId: string,
-      toolName: string,
-      toolInput: Record<string, any>,
-      completed: boolean,
-    ) => void
-  > = [];
-  private middlewares: Middleware[] = [];
+  /** mitt 事件发射器，替代之前的回调数组 */
+  readonly events = mitt<AgentTurnEvents>();
 
-  onStreamCreate(fn: (stream: MessageStream<null>) => void) {
-    this.onStreamCreateFns.push(fn);
-  }
-  onToolUse(
-    fn: (
-      toolUseId: string,
-      toolName: string,
-      toolInput: Record<string, any>,
-      completed: boolean,
-    ) => void,
-  ) {
-    this.onToolUseFns.push(fn);
-  }
+  private middlewares: Middleware[] = [];
 
   use(middleware: Middleware) {
     this.middlewares.push(middleware);
@@ -79,7 +69,7 @@ class AgentTurn {
         : undefined,
       tools: toolDefinitions,
     }) as MessageStream<null>;
-    this.onStreamCreateFns.forEach((fn) => fn(stream));
+    this.events.emit('stream:create', stream);
     let hasToolUse = false;
     const completedToolUses: Array<{ id: string; name: string; input: Record<string, any> }> = [];
     stream.on('contentBlock', (content) => {
@@ -98,7 +88,7 @@ class AgentTurn {
     // 执行工具并收集结果
     if (completedToolUses.length > 0) {
       for (const tool of completedToolUses) {
-        this.onToolUseFns.forEach((fn) => fn(tool.id, tool.name, tool.input, false));
+        this.events.emit('tool:use', { toolUseId: tool.id, toolName: tool.name, toolInput: tool.input, completed: false });
       }
 
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
@@ -118,7 +108,7 @@ class AgentTurn {
                   : String(r.reason)
               }`;
         toolResults.push({ type: 'tool_result', tool_use_id: tool.id, content: result });
-        this.onToolUseFns.forEach((fn) => fn(tool.id, tool.name, tool.input, true));
+        this.events.emit('tool:use', { toolUseId: tool.id, toolName: tool.name, toolInput: tool.input, completed: true });
 
         // 如果工具执行失败，标记为错误状态
         if (r.status === 'rejected') {
