@@ -12,13 +12,13 @@ import { DropDownUI } from './components/DropDown/index.js';
 export function App(): React.ReactNode {
   return (
     <Box flexDirection="column" height="100%">
+      <ConversationUI.renderFn />
       <TerminalInputUI.renderFn />
       <WorkingStatusUI.renderFn />
       <DropDownUI.renderFn />
       <MessageBarUI.renderFn />
       <ToolCallListUI.renderFn />
       <ThinkTextUI.renderFn />
-      <ConversationUI.renderFn />
       <Box paddingBottom={1} />
     </Box>
   );
