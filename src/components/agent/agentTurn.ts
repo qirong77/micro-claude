@@ -64,6 +64,7 @@ class AgentTurn {
 
     const model = modelAtom.get();
     const effort = effortAtom.get();
+    inputBarInfoAtom.set({ type: 'connecting' });
     const stream = getClient().messages.stream({
       model,
       max_tokens: maxTokensAtom.get(),

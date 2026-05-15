@@ -127,6 +127,7 @@ export type InputBarStatus = 'idle' | 'completed' | 'error';
 /** InputBar 展示信息（驱动 UI 渲染） */
 export type InputBarInfo =
   | { type: 'idle' }
+  | { type: 'connecting' }
   | { type: 'thinking' }
   | { type: 'calling_tool' }
   | { type: 'completed'; elapsedMs?: number }

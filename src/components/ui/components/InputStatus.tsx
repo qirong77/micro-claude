@@ -21,6 +21,7 @@ export function InputStatus() {
 
   const content = (() => {
     switch (info.type) {
+      case 'connecting':
       case 'thinking':
       case 'calling_tool':
         return <Box>
