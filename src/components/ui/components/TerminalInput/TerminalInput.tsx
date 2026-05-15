@@ -73,7 +73,7 @@ export function TerminalInput(props:{
         width="100%"
       >
         <Box marginLeft={1} marginRight={1}>
-          <Text bold color={C.primary}>&gt;</Text>
+          <Text bold color={C.primary}>{'❯'}</Text>
         </Box>
         <Box flexGrow={1} flexShrink={1}>
           <SimpleTextInput
