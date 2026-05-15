@@ -10,6 +10,7 @@ import {
   inputBarInfoAtom,
   effortAtom,
   EFFORT_TOKENS,
+  statusesAtom,
 } from '../../store';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
@@ -61,10 +62,10 @@ class AgentTurn {
 
   async executeSingleIteration(): Promise<IterationResult> {
     const messages = messagesAtom.get();
-
     const model = modelAtom.get();
     const effort = effortAtom.get();
     inputBarInfoAtom.set({ type: 'connecting' });
+    statusesAtom.set([])
     const stream = getClient().messages.stream({
       model,
       max_tokens: maxTokensAtom.get(),
