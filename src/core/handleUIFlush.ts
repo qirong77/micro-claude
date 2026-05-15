@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { agentTurn } from '../components/agent/agentTurn';
-import { messagesAtom } from '../store';
+import { messagesAtom } from '../components/agent/requestConfigAtom.js';
 import { ui } from '../components/ui';
 import { getToolDisplayText } from '../components/tools';
 

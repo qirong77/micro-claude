@@ -6,11 +6,11 @@ import {
   messagesAtom,
   modelAtom,
   maxTokensAtom,
-  inputBarStatusAtom,
   effortAtom,
   EFFORT_TOKENS,
-} from '../../store';
+} from './requestConfigAtom.js';
 import { ui } from '../ui/index.js';
+import { inputBarInfoAtom } from '../ui/components/WorkingStatus/index.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 
@@ -122,8 +122,7 @@ class AgentTurn {
 
         // 如果工具执行失败，标记为错误状态
         if (r.status === 'rejected') {
-          inputBarStatusAtom.set('error');
-          ui.WorkingStatus.atomData.set({
+          inputBarInfoAtom.set({
             type: 'error',
             message: r.reason instanceof Error ? r.reason.message : String(r.reason),
           });

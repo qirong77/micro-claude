@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { apiKeyAtom, baseUrlAtom } from "../../store";
+import { apiKeyAtom, baseUrlAtom } from "./requestConfigAtom";
 
 let _client: Anthropic | null = null;
 

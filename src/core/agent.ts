@@ -1,6 +1,6 @@
 import { agentTurn } from '../components/agent/agentTurn';
 import { ui } from '../components/ui';
-import { inputBarStatusAtom } from '../store';
+import { inputBarStatusAtom } from '../components/ui/components/WorkingStatus/index.js';
 import { handleToolUseState, handleStreamText, handleThinking } from './handleUIFlush';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 

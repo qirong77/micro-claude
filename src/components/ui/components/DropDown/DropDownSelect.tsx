@@ -1,9 +1,14 @@
 import { Box } from '@anthropic/ink';
 import React, { useMemo } from 'react';
+import { atom } from 'nanostores';
 import { useSchedulState } from '../../hooks';
-import { inputValueAtom } from '../../../../store';
 import { CommandDropdown } from './CommandDropdown';
 import { DropDownUI } from './index.js';
+
+// ── 输入框状态（供 DropDown 筛选使用） ─────────────────
+
+export const inputValueAtom = atom('');
+export const cursorAtom = atom(0);
 
 
 export function DropDownSelect() {

@@ -1,9 +1,18 @@
 import React from 'react';
 import { Box, Text } from '@anthropic/ink';
 import { atom } from 'nanostores';
-import type { ToolCallData } from '../../../../store/index.js';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
 import { ThinkTextUI } from '../ThinkText/index.js';
+
+// ── Types ──────────────────────────────────────────────
+
+export interface ToolCallData {
+  id: string;
+  toolName: string;
+  toolInput: Record<string, any>;
+  completed: boolean;
+  displayText: string;
+}
 
 // ── 响应式数据 ────────────────────────────────────────
 

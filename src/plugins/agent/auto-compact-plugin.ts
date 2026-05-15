@@ -1,6 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { MicaPlugin } from '../MicaPlugin';
-import { messagesAtom } from '../../store';
+import { messagesAtom } from '../../components/agent/requestConfigAtom.js';
 
 const MAX_TOOL_RESULT_LENGTH = 10000;
 

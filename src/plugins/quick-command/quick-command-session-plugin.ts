@@ -1,9 +1,23 @@
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { atom } from 'nanostores';
 import { MicaPlugin } from '../MicaPlugin';
-import type { SessionMeta } from '../../store';
-import { messagesAtom, sessionsIndexAtom, currentSessionIdAtom, sessionSwitchAtom } from '../../store';
+import { messagesAtom } from '../../components/agent/requestConfigAtom.js';
+
+// ── Session 相关类型与 atom（插件内部闭环） ────────────
+
+export interface SessionMeta {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export const sessionsIndexAtom = atom<SessionMeta[]>([]);
+export const currentSessionIdAtom = atom<string>('');
+/** Set by UI when user picks a session; the plugin picks it up and performs the switch */
+export const sessionSwitchAtom = atom<string | null>(null);
 
 const SESSIONS_DIR = resolve(process.env.HOME || '~', '.mica', 'sessions');
 const INDEX_PATH = resolve(SESSIONS_DIR, 'index.json');
@@ -45,11 +59,11 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
     const index = loadIndexSync();
     sessionsIndexAtom.set(index);
 
-    this.store.sessionsIndex.listen(async (val) => {
+    sessionsIndexAtom.listen(async (val) => {
       await saveIndex([...val]);
     });
 
-    this.store.sessionSwitch.listen((sessionId) => {
+    sessionSwitchAtom.listen((sessionId) => {
       if (!sessionId) return;
       this._switchToSession(sessionId);
     });
@@ -112,7 +126,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
 
     await this._persistMessages(id, messages);
 
-    const idx = [...this.store.sessionsIndex.get(), meta];
+    const idx = [...sessionsIndexAtom.get(), meta];
     sessionsIndexAtom.set(idx);
     currentSessionIdAtom.set(id);
     this._currentSessionId = id;
@@ -128,7 +142,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   }
 
   private async _updateSessionTimestamp(id: string) {
-    const idx = this.store.sessionsIndex.get();
+    const idx = sessionsIndexAtom.get();
     const updated = idx.map((s) =>
       s.id === id ? { ...s, updatedAt: Date.now() } : s,
     );
@@ -136,7 +150,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   }
 
   private _showSessionList() {
-    const idx = this.store.sessionsIndex.get();
+    const idx = sessionsIndexAtom.get();
     if (idx.length === 0) {
       this.showMessage('没有已保存的对话');
       return;
@@ -187,7 +201,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       this._suppressAutoSave = false;
       messagesAtom.set(msgs);
       currentSessionIdAtom.set(sessionId);
-      const meta = this.store.sessionsIndex.get().find((s) => s.id === sessionId);
+      const meta = sessionsIndexAtom.get().find((s) => s.id === sessionId);
       this.showMessage(`已切换到: ${meta?.title || sessionId}`);
     } catch {
       this._suppressAutoSave = false;

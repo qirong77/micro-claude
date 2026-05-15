@@ -5,7 +5,7 @@ import {
   modelOptionsAtom,
   effortOptionsAtom,
   type EffortLevel,
-} from '../../store';
+} from '../../components/agent/requestConfigAtom.js';
 
 export class QuickCommandModelPlugin extends MicaPlugin {
   onInstall(): void {

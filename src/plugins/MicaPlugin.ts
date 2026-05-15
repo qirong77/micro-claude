@@ -1,56 +1,33 @@
+import { atom } from 'nanostores';
 import type { IMicaAgent } from '../core/agent';
 import {
   messagesAtom,
-  quickCommandsAtom,
-  baseUrlAtom,
-  apiKeyAtom,
-  modelAtom,
-  modelOptionsAtom,
-  inputValueAtom,
-  cursorAtom,
-  cacheDir,
-  effortAtom,
-  effortOptionsAtom,
-  maxTokensAtom,
-  sessionsIndexAtom,
-  currentSessionIdAtom,
-  sessionSwitchAtom,
-  inputBarStatusAtom,
-} from '../store';
-import type { Command, InputHandler, InputState, InputAction } from '../components/ui/data';
+} from '../components/agent/requestConfigAtom.js';
+import type { Command } from '../components/ui/data';
 import type Anthropic from '@anthropic-ai/sdk';
-import type { ReadableAtom, WritableAtom } from 'nanostores';
+import type { ReadableAtom } from 'nanostores';
 import { uuid } from '../utils/uuid';
+
+// ── 快速命令列表（由插件注册，插件内部闭环） ────────────
+
+export const quickCommandsAtom = atom<Command[]>([]);
 
 /**
  * MicaPlugin 基类
  *
  * 所有插件应继承此类，通过 `this.agent` 访问 MicaAgent 实例，
- * 通过 `this.agent.ui` 访问 UI 组件对象（消息、思考文本、工具调用、下拉菜单等），
- * 通过 `this.store` 访问全局 store atom。
+ * 通过 `this.agent.ui` 访问 UI 组件对象（消息、思考文本、工具调用、下拉菜单等）。
  */
 export abstract class MicaPlugin {
   /** MicaAgent 实例引用 */
   agent!: IMicaAgent;
 
-  /** Store atoms — 插件通过此对象访问全局状态 */
+  /**
+   * 核心 store atoms（常用数据入口）
+   * 插件可直接 import 所需的 atom 以获得完整类型
+   */
   protected store = {
     messages: messagesAtom as ReadableAtom<Anthropic.MessageParam[]>,
-    quickCommands: quickCommandsAtom as WritableAtom<Command[]>,
-    baseUrl: baseUrlAtom as ReadableAtom<string>,
-    apiKey: apiKeyAtom as ReadableAtom<string>,
-    model: modelAtom as ReadableAtom<string>,
-    maxTokens: maxTokensAtom as ReadableAtom<number>,
-    modelOptions: modelOptionsAtom as WritableAtom<Array<{ name: string; label: string }>>,
-    effort: effortAtom as WritableAtom<string>,
-    effortOptions: effortOptionsAtom as WritableAtom<Array<{ name: string; label: string }>>,
-    inputValue: inputValueAtom as WritableAtom<string>,
-    cursor: cursorAtom as WritableAtom<number>,
-    cacheDir,
-    sessionsIndex: sessionsIndexAtom as ReadableAtom<import('../store').SessionMeta[]>,
-    currentSessionId: currentSessionIdAtom as ReadableAtom<string>,
-    sessionSwitch: sessionSwitchAtom as WritableAtom<string | null>,
-    inputBarStatus: inputBarStatusAtom as ReadableAtom<import('../store').InputBarStatus>,
   };
 
   /**
@@ -61,7 +38,7 @@ export abstract class MicaPlugin {
 
   /** 添加一个快速命令 */
   protected addQuickCommand(command: Command): void {
-    this.store.quickCommands.set([...this.store.quickCommands.get(), command]);
+    quickCommandsAtom.set([...quickCommandsAtom.get(), command]);
   }
 
   /** 显示一条消息（通过 UI 组件事件） */

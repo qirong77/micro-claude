@@ -1,6 +1,6 @@
 
 import { MicaPlugin } from '../MicaPlugin';
-import { messagesAtom } from '../../store';
+import { messagesAtom } from '../../components/agent/requestConfigAtom.js';
 
 /**
  * 清空对话插件：清空当前显示的对话消息。
