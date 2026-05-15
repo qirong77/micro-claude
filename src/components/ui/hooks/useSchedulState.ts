@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReadableAtom } from 'nanostores';
 import { uuid } from '../../../utils/uuid';
 
-// ── 全局节流调度 ──────────────────────────────────────
-// 所有 useSchedulState 实例共享同一个最后刷新时间和节流间隔
-const THROTTLE_INTERVAL = 50;
+const THROTTLE_INTERVAL = 16;
 let lastFlushTime = 0;
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -45,6 +43,7 @@ export function useSchedulState<T>(atom: ReadableAtom<T>): T {
   const stateUpdaterId = useRef(uuid());
   useEffect(() => {
     const id = stateUpdaterId.current;
+            setState(snapRef.current);
     const unsub = atom.subscribe((newState) => {
       snapRef.current = newState;
       pendingUpdaters[id] = () => {
