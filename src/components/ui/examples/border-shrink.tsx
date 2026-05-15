@@ -1,4 +1,4 @@
-import { Box, render, Text, useStdout, useApp } from 'ink';
+import { Box, render, Text, useStdout, useApp, Static } from 'ink';
 import React, { useEffect, useState } from 'react';
 
 function BorderExample() {
@@ -40,14 +40,24 @@ function BorderExample() {
   const dashLine = '-'.repeat(Math.max(0, columns - 1));
 
   return (
-    <Box flexDirection="column">
-      <Text>{dashLine}</Text>
-
-      <Text>border-example</Text>
-      <Text>运行时间: {elapsed}秒</Text>
+    <Box>
+      <Box flexDirection="column">
+        {/* <Text>{dashLine}</Text> */}
+        <Text>border-example</Text>
+        <Text>运行时间: {elapsed}秒</Text>
+      </Box>
+      <Static items={['---'.repeat(100)]}>
+        {(item) => {
+          return (
+            <Box key={item}>
+              <Text>{item}</Text>
+            </Box>
+          );
+        }}
+      </Static>
     </Box>
   );
 }
 
-const {waitUntilExit} = render(<BorderExample />);
-waitUntilExit()
+const { waitUntilExit } = render(<BorderExample />);
+waitUntilExit();
