@@ -39,7 +39,7 @@ function scheduleSave() {
     } catch {
       // silent
     }
-  }, 300);
+  }, 500);
 }
 
 export function createPersistedAtom<T>(key: string, defaultValue: T): WritableAtom<T> {
