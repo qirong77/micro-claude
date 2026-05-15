@@ -623,9 +623,9 @@ export function TerminalInput(props: {
 }
 
 // ─── Resize debounce ──────────────────────────────────────────────────────────
-
+// 
 const DEBOUNCE_MS = 1000;
-
+// 已知问题： 当终端的宽度变小时，可能会渲染多个边框，暂时使用减少更新频率的方法，避免渲染太多边框，但是还是会渲染额外的边框
 (function patchResizeDebounce() {
   const _emit = process.stdout.emit.bind(process.stdout) as typeof process.stdout.emit;
 
