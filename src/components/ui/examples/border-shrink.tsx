@@ -6,6 +6,7 @@ function BorderExample() {
   const { exit } = useApp();
   const [startTime] = useState(Date.now());
   const [elapsed, setElapsed] = useState(0);
+  const [columns, setColumns] = useState(stdout.columns);
 
   useEffect(() => {
     const onKeyPress = (ch: string, key: { ctrl: boolean }) => {
@@ -26,16 +27,21 @@ function BorderExample() {
     return () => clearInterval(timer);
   }, [startTime]);
 
-  const count = stdout.columns;
-  const dashes = Array.from({ length: count }, (_, i) => (
-    <Text key={i}>-</Text>
-  ));
+  useEffect(() => {
+    const handleResize = () => {
+      setColumns(process.stdout.columns);
+    };
+    process.stdout.on('resize', handleResize);
+    return () => {
+      process.stdout.removeListener('resize', handleResize);
+    };
+  }, []);
+
+  const dashLine = '-'.repeat(Math.max(0, columns - 1));
 
   return (
     <Box flexDirection="column">
-      <Box>
-        {dashes}
-      </Box>
+      <Text>{dashLine}</Text>
 
       <Text>border-example</Text>
       <Text>运行时间: {elapsed}秒</Text>
