@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text, type Color } from '@anthropic/ink';
-import { C } from '../data.js';
+import { C } from '../../data.js';
 
 export interface DropdownItem {
   key: string;

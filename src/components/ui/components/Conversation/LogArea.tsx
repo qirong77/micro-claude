@@ -1,9 +1,9 @@
 import React from 'react';
 import { Box, Text } from '@anthropic/ink';
 import type Anthropic from '@anthropic-ai/sdk';
-import { C } from '../data.js';
-import { messagesAtom } from '../../../store/index.js';
-import { useSchedulState } from '../hooks/useSchedulState.js';
+import { C } from '../../data.js';
+import { messagesAtom } from '../../../../store/index.js';
+import { useSchedulState } from '../../hooks/useSchedulState.js';
 import { MarkdownRenderByLine, classifyLine, type BlockType } from './MarkdownRenderByLine.js';
 
 // ── LogArea 内部使用的消息类型 ────────────────────────────

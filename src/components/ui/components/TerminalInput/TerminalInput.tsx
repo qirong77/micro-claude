@@ -3,11 +3,16 @@ import React from "react";
 import { useCallback, useState } from "react";
 import { SimpleTextInput } from "./Input";
 import { C } from "../../data";
+import mitt from 'mitt'
+import { atom } from "nanostores";
+type Events = {
+  submit: string
+}
+const emitter = mitt<Events>()
+const atomText = atom('')
 
-export function TerminalInput(props:{
-  onSubmit:Function
-}) {
-  const [input, setInput] = useState('');
+function TerminalInput() {
+  const [input, setInput] = useState(atomText.get());
   const [cursorOffset, setCursorOffset] = useState(0);
   const [prevInputs, setPrevInputs] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -21,10 +26,10 @@ export function TerminalInput(props:{
         setHistoryIndex(-1);
         setInput('');
         setCursorOffset(0);
-        props.onSubmit(trimmed)
+        emitter.emit('submit',trimmed)
       }
     },
-    [props.onSubmit],
+    [],
   );
 
   const onExit = useCallback(() => {
@@ -94,4 +99,10 @@ export function TerminalInput(props:{
       </Box>
     </Box>
   );
+}
+
+export const TerminalInputUI = {
+  renderFn:TerminalInput,
+  emitter,
+  atomText
 }

@@ -1,11 +1,17 @@
 import { agentTurn } from '../components/agent/agentTurn';
 import { ui } from '../components/ui';
-import { messageBarItemsAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
+import {
+  messageBarItemsAtom,
+  thinkingTextAtom,
+  toolCallsAtom,
+  inputBarStatusAtom,
+  inputBarInfoAtom,
+} from '../store';
 import { handleToolUseState, handleStreamText, handleThinking } from './handleUIFlush';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 
 // ── 用户提交入口 ──
-ui.onUserSubmit(async (text) => {
+ui.TerminalInputUI.emitter.on('submit', async (text) => {
   const startTime = Date.now();
 
   inputBarStatusAtom.set('idle');
@@ -51,8 +57,8 @@ export const MicaAgent = {
     _installedPlugins.push(plugin);
     return plugin;
   },
-  run(){
-    ui.run()
-  }
+  run() {
+    ui.run();
+  },
 };
 export type IMicaAgent = typeof MicaAgent;
