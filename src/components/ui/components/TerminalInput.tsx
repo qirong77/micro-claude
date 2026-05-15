@@ -13,8 +13,6 @@ import {
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
 
-import { getImageFromClipboard, saveImage, hasImageInClipboard } from '../utils/imagePaste.js';
-
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
 const MAX_HISTORY = 100;
 
@@ -577,30 +575,3 @@ export function TerminalInput(props: {
     </Box>
   );
 }
-
-// ─── Resize debounce ──────────────────────────────────────────────────────────
-// 
-const DEBOUNCE_MS = 1000;
-// 已知问题： 当终端的宽度变小时，可能会渲染多个边框，暂时使用减少更新频率的方法，避免渲染太多边框，但是还是会渲染额外的边框
-(function patchResizeDebounce() {
-  const _emit = process.stdout.emit.bind(process.stdout) as typeof process.stdout.emit;
-
-  let _timer: ReturnType<typeof setTimeout> | undefined;
-
-  (
-    process.stdout as NodeJS.WriteStream & {
-      emit: typeof process.stdout.emit;
-    }
-  ).emit = function emit(
-    event: string | symbol,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...args: any[]
-  ): boolean {
-    if (event === 'resize') {
-      clearTimeout(_timer);
-      _timer = setTimeout(() => _emit('resize'), DEBOUNCE_MS);
-      return true;
-    }
-    return (_emit as (e: string | symbol, ...a: unknown[]) => boolean)(event, ...args);
-  };
-})();
