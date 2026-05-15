@@ -56,3 +56,5 @@ export const effortOptionsAtom = atom<EffortOption[]>([
 
 /** 核心对话消息列表（agent 核心依赖） */
 export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
+
+
