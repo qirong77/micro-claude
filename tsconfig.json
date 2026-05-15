@@ -7,8 +7,14 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@anthropic/ink": ["./packages/ink/src/index.ts"],
+      "@anthropic/ink/*": ["./packages/ink/src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "packages"]
 }

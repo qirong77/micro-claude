@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text } from '@anthropic/ink';
 
 const primary = '#4a9eff';
 const codeText = '#91c1f7';

@@ -1,4 +1,4 @@
-import { Box, Text, useInput, usePaste, useStdout } from 'ink';
+import { Box, Text, useInput, stringWidth } from '@anthropic/ink';
 import React, { useMemo, useRef, useState } from 'react';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -12,7 +12,7 @@ import {
 } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './CommandDropdown.js';
-import stringWidth from 'string-width';
+
 import { getImageFromClipboard, saveImage, hasImageInClipboard } from '../utils/imagePaste.js';
 
 const HISTORY_FILE = resolve(homedir(), '.mica', 'input-history.json');
@@ -152,13 +152,12 @@ export function TerminalInput(props: {
   onSubmit: (value: string) => void;
   commands: readonly Command[];
 }) {
-  const { stdout } = useStdout();
   const value = useSchedulState(inputValueAtom);
   const cursor = useSchedulState(cursorAtom);
   const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
   const dropdownVisible = useSchedulState(dropdownAtom).visible;
   const promptGlyph = '❯\u00A0';
-  const totalCols = stdout?.columns ?? 80;
+  const totalCols = process.stdout.columns ?? 80;
   const inputCols = Math.max(1, totalCols - stringWidth(promptGlyph));
   const wrapCols = Math.max(1, inputCols - 1);
   const visualRows = useMemo(() => buildVisualRows(value, wrapCols), [value, wrapCols]);
@@ -189,49 +188,6 @@ export function TerminalInput(props: {
   // ── History navigation state ───────────────────────────────────────────────
   const historyIndexRef = useRef(0);
   const draftRef = useRef<{ value: string; cursor: number } | null>(null);
-
-  // ── Paste handler ─────────────────────────────────────────────────────────
-  usePaste((text) => {
-    const sanitized = text
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n')
-      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
-
-    // Empty paste + macOS = possible image paste. Check clipboard.
-    if (!sanitized && process.platform === 'darwin' && hasImageInClipboard()) {
-      const imageData = getImageFromClipboard();
-      if (imageData) {
-        const v = inputValueAtom.get();
-        const c = cursorAtom.get();
-        const ref = `[Image](${imageData.path})`;
-        inputValueAtom.set(v.slice(0, c) + ref + v.slice(c));
-        cursorAtom.set(c + ref.length);
-      }
-      return;
-    }
-
-    if (!sanitized) return;
-
-    // Check if pasted text contains image file paths (drag & drop from Finder)
-    const parts = sanitized.split(/\s+/);
-    let insertText = sanitized;
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(trimmed) && existsSync(trimmed)) {
-        const buf = readFileSync(trimmed);
-        const ext = trimmed.toLowerCase().match(/\.(\w+)$/)?.[1] || 'png';
-        const mediaType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
-        const savedPath = saveImage(buf.toString('base64'), mediaType);
-        const ref = `[Image](${savedPath})`;
-        insertText = insertText.replace(trimmed, ref);
-      }
-    }
-
-    const v = inputValueAtom.get();
-    const c = cursorAtom.get();
-    inputValueAtom.set(v.slice(0, c) + insertText + v.slice(c));
-    cursorAtom.set(c + insertText.length);
-  });
 
   // ── Helper to set both value and cursor ──────────────────────────────────────
   function setInput(value: string, cursor: number) {

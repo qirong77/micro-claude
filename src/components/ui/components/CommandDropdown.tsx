@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, type Color } from '@anthropic/ink';
 import { C } from '../data.js';
 
 export interface DropdownItem {
@@ -39,10 +39,10 @@ export function CommandDropdown({
         const isSelected = i === selectedIndex;
         return (
           <Box key={item.key}>
-            <Text color={isSelected ? C.primary : ''}>
+            <Text color={isSelected ? C.primary : undefined}>
               {isSelected ? '▸' : ' '}
             </Text>
-            <Text bold color={isSelected ? C.primary : ''}>
+            <Text bold color={isSelected ? C.primary : undefined}>
               {' '}
               {item.label}
             </Text>
@@ -50,7 +50,7 @@ export function CommandDropdown({
               <Text dimColor> — {item.description}</Text>
             )}
             {item.suffix && (
-              <Text color={item.suffix.color ?? C.success}> {item.suffix.text}</Text>
+              <Text color={(item.suffix.color ?? C.success) as Color}> {item.suffix.text}</Text>
             )}
           </Box>
         );

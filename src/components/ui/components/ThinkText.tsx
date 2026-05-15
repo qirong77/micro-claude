@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text } from '@anthropic/ink';
 import { thinkingTextAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
 

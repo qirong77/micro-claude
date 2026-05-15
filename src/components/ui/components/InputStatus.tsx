@@ -1,4 +1,4 @@
-import { Box, Text } from 'ink';
+import { Box, Text } from '@anthropic/ink';
 import React from 'react';
 import { useSchedulState } from '../hooks';
 import { inputBarInfoAtom, modelAtom, effortAtom } from '../../../store';

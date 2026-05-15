@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useReducer, useState } from 'react';
-import { Box, useInput, useStdout } from 'ink';
+import { Box } from '@anthropic/ink';
 import type { Command } from './data.js';
 
 import { LogArea } from './components/LogArea.js';

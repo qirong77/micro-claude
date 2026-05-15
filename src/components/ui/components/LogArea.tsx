@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Static, Text } from 'ink';
+import { Box, Text } from '@anthropic/ink';
 import type Anthropic from '@anthropic-ai/sdk';
 import { C } from '../data.js';
 import { messagesAtom } from '../../../store/index.js';
@@ -94,43 +94,41 @@ export const LogArea = (): React.ReactNode => {
   const blockTypes: BlockType[] = assistantLines.map((it) => classifyLine(it.text));
   return (
     <Box flexDirection="column">
-      <Static items={staticItems}>
-        {(item: LogItem) => {
-          if (item.type === 'clear') {
-            return (
-              <Box key={item.id} paddingLeft={1} paddingY={2}>
-                <Text color="#FFB6C1">✦</Text>
-                <Text> </Text>
-                <Text bold color="#FF69B4">
-                  ~*~ clear! ~*~
-                </Text>
-                <Text> </Text>
-                <Text color="#FFB6C1">✦</Text>
-              </Box>
-            );
-          }
-          if (item.role === 'user') {
-            return (
-              <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
-                <Text color={C.primary}>▌</Text>
-                <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
-                  <Text bold color={C.primary}>
-                    {item.text}
-                  </Text>
-                </Box>
-              </Box>
-            );
-          }
-          const idx = assistantLines.findIndex((l) => l.id === item.id);
-          const prevType = idx > 0 ? blockTypes[idx - 1] : undefined;
-          const nextType = idx < blockTypes.length - 1 ? blockTypes[idx + 1] : undefined;
+      {staticItems.map((item: LogItem) => {
+        if (item.type === 'clear') {
           return (
-            <Box key={item.id}>
-              <MarkdownRenderByLine text={item.text} prevType={prevType} nextType={nextType} />
+            <Box key={item.id} paddingLeft={1} paddingY={2}>
+              <Text color="#FFB6C1">✦</Text>
+              <Text> </Text>
+              <Text bold color="#FF69B4">
+                ~*~ clear! ~*~
+              </Text>
+              <Text> </Text>
+              <Text color="#FFB6C1">✦</Text>
             </Box>
           );
-        }}
-      </Static>
+        }
+        if (item.role === 'user') {
+          return (
+            <Box key={item.id} paddingX={1} paddingY={1} flexDirection="row">
+              <Text color={C.primary}>▌</Text>
+              <Box flexGrow={1} paddingLeft={1} paddingRight={1}>
+                <Text bold color={C.primary}>
+                  {item.text}
+                </Text>
+              </Box>
+            </Box>
+          );
+        }
+        const idx = assistantLines.findIndex((l) => l.id === item.id);
+        const prevType = idx > 0 ? blockTypes[idx - 1] : undefined;
+        const nextType = idx < blockTypes.length - 1 ? blockTypes[idx + 1] : undefined;
+        return (
+          <Box key={item.id}>
+            <MarkdownRenderByLine text={item.text} prevType={prevType} nextType={nextType} />
+          </Box>
+        );
+      })}
       {lastLineText ? <Text>{lastLineText}</Text> : null}
     </Box>
   );

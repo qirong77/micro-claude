@@ -1,4 +1,4 @@
-import { render } from 'ink';
+import { wrappedRender as render } from '@anthropic/ink';
 import React, { useCallback } from 'react';
 import { App } from './app.js';
 import type { Command, InputHandler } from './data.js';

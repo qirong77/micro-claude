@@ -11,7 +11,7 @@ import { KeyboardEvent } from '../core/events/keyboard-event.js'
 import type { Key, InputEvent } from '../core/events/input-event.js'
 import type { ParsedKey } from '../core/parse-keypress.js'
 import useInput from './use-input.js'
-import { useTerminalSize } from '../hooks/useTerminalSize.js'
+import { useTerminalSize } from './useTerminalSize.js'
 
 type UseSearchInputOptions = {
   isActive: boolean
