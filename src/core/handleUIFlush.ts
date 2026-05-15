@@ -1,31 +1,29 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { agentTurn } from '../components/agent/agentTurn';
-import { messagesAtom, thinkingTextAtom, toolCallsAtom, inputBarStatusAtom, inputBarInfoAtom } from '../store';
+import { messagesAtom } from '../store';
+import { ui } from '../components/ui';
 import { getToolDisplayText } from '../components/tools';
-import { uuid } from '../utils/uuid';
 
 export function handleToolUseState() {
   agentTurn.onStreamCreate((stream) => {
     stream.on('text', () => {
-      toolCallsAtom.set([]);
-      thinkingTextAtom.set('');
-      inputBarInfoAtom.set({ type: 'idle' });
+      ui.ToolCallList.atomData.set([]);
+      ui.ThinkText.atomData.set('');
+      ui.InputStatus.atomData.set({ type: 'idle' });
     });
   });
   agentTurn.onToolUse((toolUseId, toolName, toolInput, completed) => {
-    inputBarInfoAtom.set({ type: 'calling_tool' });
+    ui.InputStatus.atomData.set({ type: 'calling_tool' });
     const displayText = getToolDisplayText(toolName, toolInput);
-    const existing = toolCallsAtom.get();
+    const existing = ui.ToolCallList.atomData.get();
     const idx = existing.findIndex((t) => t.id === toolUseId);
     
-    
     if (idx !== -1) {
-      // 更新已有记录
       const updated = [...existing];
       updated[idx] = { ...updated[idx], completed, displayText };
-      toolCallsAtom.set(updated);
+      ui.ToolCallList.atomData.set(updated);
     } else {
-      toolCallsAtom.set([
+      ui.ToolCallList.atomData.set([
         ...existing,
         { id: toolUseId, toolName, toolInput, completed, displayText },
       ]);
@@ -35,11 +33,11 @@ export function handleToolUseState() {
 
 export function handleThinking() {
   agentTurn.onStreamCreate((stream) => {
-    inputBarInfoAtom.set({ type: 'thinking' });
+    ui.InputStatus.atomData.set({ type: 'thinking' });
     let thinkingText = '';
     stream.on('thinking', (chunk) => {
       thinkingText += chunk;
-      thinkingTextAtom.set(thinkingText);
+      ui.ThinkText.atomData.set(thinkingText);
     });
   });
 }

@@ -1,30 +1,24 @@
-import React, { useCallback, useMemo, useReducer, useState } from 'react';
+import React from 'react';
 import { Box } from '@anthropic/ink';
-import type { Command } from './data.js';
 
-import { LogArea } from './components/Conversation/LogArea.js';
-import { MessageBar } from './components/MessageBar.js';
-import { ThinkText } from './components/ThinkText.js';
-import { ToolCallList } from './components/ToolCallList.js';
 import { TerminalInputUI } from './components/TerminalInput/TerminalInput.js';
-import { InputStatus } from './components/InputStatus.js';
-import { DropDownSelect } from './components/DropDown/DropDownSelect.js';
-
-interface AppProps {
-  isLoading?: boolean;
-  quickCommands: readonly Command[];
-  onSubmit: (text: string) => void;
-}
+import { ConversationUI } from './components/Conversation/index.js';
+import { MessageBarUI } from './components/MessageBar/index.js';
+import { ThinkTextUI } from './components/ThinkText/index.js';
+import { ToolCallListUI } from './components/ToolCallList/index.js';
+import { InputStatusUI } from './components/InputStatus/index.js';
+import { DropDownUI } from './components/DropDown/index.js';
 
 export function App(): React.ReactNode {
   return (
     <Box flexDirection="column" height="100%">
-      {TerminalInputUI.renderFn()}
-      <InputStatus />
-      <DropDownSelect />
-      <MessageBar />
-      <ToolCallList />
-      <ThinkText />
+      <TerminalInputUI.renderFn />
+      <InputStatusUI.renderFn />
+      <DropDownUI.renderFn />
+      <MessageBarUI.renderFn />
+      <ToolCallListUI.renderFn />
+      <ThinkTextUI.renderFn />
+      <ConversationUI.renderFn />
       <Box paddingBottom={1} />
     </Box>
   );

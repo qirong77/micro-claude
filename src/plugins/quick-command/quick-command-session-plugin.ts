@@ -112,8 +112,8 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
 
     await this._persistMessages(id, messages);
 
-    const index = [...this.store.sessionsIndex.get(), meta];
-    sessionsIndexAtom.set(index);
+    const idx = [...this.store.sessionsIndex.get(), meta];
+    sessionsIndexAtom.set(idx);
     currentSessionIdAtom.set(id);
     this._currentSessionId = id;
 
@@ -128,21 +128,21 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   }
 
   private async _updateSessionTimestamp(id: string) {
-    const index = this.store.sessionsIndex.get();
-    const updated = index.map((s) =>
+    const idx = this.store.sessionsIndex.get();
+    const updated = idx.map((s) =>
       s.id === id ? { ...s, updatedAt: Date.now() } : s,
     );
     sessionsIndexAtom.set(updated);
   }
 
   private _showSessionList() {
-    const index = this.store.sessionsIndex.get();
-    if (index.length === 0) {
+    const idx = this.store.sessionsIndex.get();
+    if (idx.length === 0) {
       this.showMessage('没有已保存的对话');
       return;
     }
 
-    const sorted = [...index].sort((a, b) => b.updatedAt - a.updatedAt);
+    const sorted = [...idx].sort((a, b) => b.updatedAt - a.updatedAt);
 
     const items = sorted.map((s) => ({
       key: s.id,
@@ -150,7 +150,8 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       description: formatTime(s.updatedAt),
     }));
 
-    this.store.dropdown.set({
+    // 通过 UI 组件的 dropdown atom 设置状态
+    this.agent.ui.DropDown.atomData.dropdown.set({
       visible: true,
       items,
       selectedIndex: 0,
@@ -158,11 +159,13 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       emptyMessage: 'no sessions',
     });
 
-    const unsub = this.store.dropdownSelection.listen((item) => {
+    // 通过 DropDownUI emitter 监听选中
+    const handler = (item: any) => {
       if (!item) return;
-      unsub();
+      this.agent.ui.DropDown.emitter.off('select', handler);
       this._switchToSession(item.key);
-    });
+    };
+    this.agent.ui.DropDown.emitter.on('select', handler);
   }
 
   private async _switchToSession(sessionId: string) {
@@ -179,10 +182,10 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
     const filePath = resolve(SESSIONS_DIR, `${sessionId}.json`);
     try {
       const raw = await readFile(filePath, 'utf-8');
-      const messages = JSON.parse(raw);
+      const msgs = JSON.parse(raw);
       this._currentSessionId = sessionId;
       this._suppressAutoSave = false;
-      messagesAtom.set(messages);
+      messagesAtom.set(msgs);
       currentSessionIdAtom.set(sessionId);
       const meta = this.store.sessionsIndex.get().find((s) => s.id === sessionId);
       this.showMessage(`已切换到: ${meta?.title || sessionId}`);

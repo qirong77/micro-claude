@@ -7,11 +7,10 @@ import {
   modelAtom,
   maxTokensAtom,
   inputBarStatusAtom,
-  inputBarInfoAtom,
   effortAtom,
   EFFORT_TOKENS,
-  messageBarItemsAtom,
 } from '../../store';
+import { ui } from '../ui/index.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 
@@ -64,8 +63,9 @@ class AgentTurn {
     const messages = messagesAtom.get();
     const model = modelAtom.get();
     const effort = effortAtom.get();
-    inputBarInfoAtom.set({ type: 'connecting' });
-    messageBarItemsAtom.set([])
+    // 通过 UI 组件设置状态
+    ui.InputStatus.atomData.set({ type: 'connecting' });
+    ui.MessageBar.emitter.emit('clear');
     const stream = getClient().messages.stream({
       model,
       max_tokens: maxTokensAtom.get(),
@@ -123,7 +123,7 @@ class AgentTurn {
         // 如果工具执行失败，标记为错误状态
         if (r.status === 'rejected') {
           inputBarStatusAtom.set('error');
-          inputBarInfoAtom.set({
+          ui.InputStatus.atomData.set({
             type: 'error',
             message: r.reason instanceof Error ? r.reason.message : String(r.reason),
           });

@@ -1,9 +1,7 @@
 import type { IMicaAgent } from '../core/agent';
 import {
   messagesAtom,
-  isLoadingAtom,
   quickCommandsAtom,
-  messageBarItemsAtom,
   baseUrlAtom,
   apiKeyAtom,
   modelAtom,
@@ -13,16 +11,11 @@ import {
   cacheDir,
   effortAtom,
   effortOptionsAtom,
-  dropdownAtom,
-  dropdownSelectionAtom,
   maxTokensAtom,
-  thinkingTextAtom,
   sessionsIndexAtom,
   currentSessionIdAtom,
   sessionSwitchAtom,
-  toolCallsAtom,
   inputBarStatusAtom,
-  inputBarInfoAtom,
 } from '../store';
 import type { Command, InputHandler, InputState, InputAction } from '../components/ui/data';
 import type Anthropic from '@anthropic-ai/sdk';
@@ -33,7 +26,8 @@ import { uuid } from '../utils/uuid';
  * MicaPlugin 基类
  *
  * 所有插件应继承此类，通过 `this.agent` 访问 MicaAgent 实例，
- * 通过 `this.store` 访问全局 store atom，避免直接引用 store 模块。
+ * 通过 `this.agent.ui` 访问 UI 组件对象（消息、思考文本、工具调用、下拉菜单等），
+ * 通过 `this.store` 访问全局 store atom。
  */
 export abstract class MicaPlugin {
   /** MicaAgent 实例引用 */
@@ -42,9 +36,7 @@ export abstract class MicaPlugin {
   /** Store atoms — 插件通过此对象访问全局状态 */
   protected store = {
     messages: messagesAtom as ReadableAtom<Anthropic.MessageParam[]>,
-    isLoading: isLoadingAtom as ReadableAtom<boolean>,
     quickCommands: quickCommandsAtom as WritableAtom<Command[]>,
-    messageBarItems: messageBarItemsAtom as WritableAtom<Array<{ id: string; text: string }>>,
     baseUrl: baseUrlAtom as ReadableAtom<string>,
     apiKey: apiKeyAtom as ReadableAtom<string>,
     model: modelAtom as ReadableAtom<string>,
@@ -52,18 +44,13 @@ export abstract class MicaPlugin {
     modelOptions: modelOptionsAtom as WritableAtom<Array<{ name: string; label: string }>>,
     effort: effortAtom as WritableAtom<string>,
     effortOptions: effortOptionsAtom as WritableAtom<Array<{ name: string; label: string }>>,
-    dropdown: dropdownAtom as WritableAtom<import('../store').DropdownState>,
-    dropdownSelection: dropdownSelectionAtom as WritableAtom<import('../store').DropdownItem | null>,
     inputValue: inputValueAtom as WritableAtom<string>,
     cursor: cursorAtom as WritableAtom<number>,
     cacheDir,
-    thinkingText: thinkingTextAtom as ReadableAtom<string>,
     sessionsIndex: sessionsIndexAtom as ReadableAtom<import('../store').SessionMeta[]>,
     currentSessionId: currentSessionIdAtom as ReadableAtom<string>,
     sessionSwitch: sessionSwitchAtom as WritableAtom<string | null>,
-    toolCalls: toolCallsAtom as ReadableAtom<import('../store').ToolCallData[]>,
     inputBarStatus: inputBarStatusAtom as ReadableAtom<import('../store').InputBarStatus>,
-    inputBarInfo: inputBarInfoAtom as ReadableAtom<import('../store').InputBarInfo>,
   };
 
   /**
@@ -77,21 +64,21 @@ export abstract class MicaPlugin {
     this.store.quickCommands.set([...this.store.quickCommands.get(), command]);
   }
 
-  /** 显示一条消息 */
+  /** 显示一条消息（通过 UI 组件事件） */
   protected showMessage(text: string): string {
     const msgId = `msg-${uuid()}`;
-    this.store.messageBarItems.set([{ id: msgId, text }]);
+    this.agent.ui.MessageBar.emitter.emit('add', { id: msgId, text });
     return msgId;
   }
 
   /** 移除指定 ID 的消息 */
   protected removeMessage(id: string): void {
-    this.store.messageBarItems.set(this.store.messageBarItems.get().filter((s) => s.id !== id));
+    this.agent.ui.MessageBar.emitter.emit('remove', id);
   }
 
   /** 清除所有消息 */
   protected clearMessages(): void {
-    this.store.messageBarItems.set([]);
+    this.agent.ui.MessageBar.emitter.emit('clear');
   }
 
   /** 获取当前消息列表 */

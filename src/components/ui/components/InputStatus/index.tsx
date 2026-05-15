@@ -1,9 +1,17 @@
 import { Box, Text } from '@anthropic/ink';
 import React from 'react';
-import { useSchedulState } from '../hooks';
-import { inputBarInfoAtom, modelAtom, effortAtom } from '../../../store';
-import { C } from '../data.js';
-import { Spin } from './common/Spin.js';
+import { atom } from 'nanostores';
+import type { InputBarInfo } from '../../../../store/index.js';
+import { useSchedulState } from '../../hooks/index.js';
+import { modelAtom, effortAtom } from '../../../../store/index.js';
+import { C } from '../../data.js';
+import { Spin } from '../common/Spin.js';
+
+// ── 响应式数据 ────────────────────────────────────────
+
+const inputBarInfoAtom = atom<InputBarInfo>({ type: 'idle' });
+
+// ── 渲染组件 ──────────────────────────────────────────
 
 function formatElapsed(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -55,3 +63,10 @@ export function InputStatus() {
     </Box>
   );
 }
+
+// ── 导出对象 ──────────────────────────────────────────
+
+export const InputStatusUI = {
+  renderFn: InputStatus,
+  atomData: inputBarInfoAtom,
+};

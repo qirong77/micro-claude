@@ -9,9 +9,9 @@ export class DebugExportAtomPlugin extends MicaPlugin {
       description: '将所有 atom 数据导出到当前目录',
       action: async () => {
         const s = this.store;
+        const ui = this.agent.ui;
         const data = {
           messages: s.messages.get(),
-          isLoading: s.isLoading.get(),
           quickCommands: s.quickCommands.get(),
           baseUrl: s.baseUrl.get(),
           apiKey: s.apiKey.get(),
@@ -20,18 +20,19 @@ export class DebugExportAtomPlugin extends MicaPlugin {
           effort: s.effort.get(),
           modelOptions: s.modelOptions.get(),
           effortOptions: s.effortOptions.get(),
-          dropdown: s.dropdown.get(),
-          dropdownSelection: s.dropdownSelection.get(),
-          messageBarItems: s.messageBarItems.get(),
-          thinkingText: s.thinkingText.get(),
           sessionsIndex: s.sessionsIndex.get(),
           currentSessionId: s.currentSessionId.get(),
           sessionSwitch: s.sessionSwitch.get(),
-          toolCalls: s.toolCalls.get(),
           inputValue: s.inputValue.get(),
           cursor: s.cursor.get(),
           inputBarStatus: s.inputBarStatus.get(),
-          inputBarInfo: s.inputBarInfo.get(),
+          // UI component atoms
+          dropdown: ui.DropDown.atomData.dropdown.get(),
+          dropdownSelection: ui.DropDown.atomData.selection.get(),
+          inputBarInfo: ui.InputStatus.atomData.get(),
+          thinkingText: ui.ThinkText.atomData.get(),
+          toolCalls: ui.ToolCallList.atomData.get(),
+          messageBarItems: [],  // MessageBar 已改为事件驱动
         };
 
         const path = resolve(process.cwd(), `atom-export-${Date.now()}.json`);

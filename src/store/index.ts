@@ -30,16 +30,17 @@ export const modelAtom = createPersistedAtom(
 export const maxTokensAtom = atom(Number(process.env.ANTHROPIC_MAX_TOKENS) || 8192);
 export const effortAtom = createPersistedAtom('effort', 'low' as EffortLevel);
 
+/** 核心对话消息列表（agent 核心依赖） */
 export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
-export const isLoadingAtom = atom(false);
+/** 快速命令列表（由插件注册） */
 export const quickCommandsAtom = atom<Command[]>([]);
 
-// ── Input value (moved from local state to store) ─────
+// ── Input state ────────────────────────────────────────
 
 export const inputValueAtom = atom('');
 export const cursorAtom = atom(0);
 
-// ── Model options (available models) ──────────────────
+// ── Model options ──────────────────────────────────────
 
 export interface ModelOption {
   name: string;
@@ -50,7 +51,6 @@ export const modelOptionsAtom = atom<ModelOption[]>([
   { name: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
   { name: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
 ]);
-
 
 export interface EffortOption {
   name: EffortLevel;
@@ -64,7 +64,7 @@ export const effortOptionsAtom = atom<EffortOption[]>([
   { name: 'high', label: 'High' },
 ]);
 
-// ── Unified dropdown ───────────────────────────────────
+// ── Dropdown types（供 UI 组件和插件共享） ──────────────
 
 export interface DropdownItem {
   key: string;
@@ -80,22 +80,6 @@ export interface DropdownState {
   title?: string;
   emptyMessage?: string;
 }
-
-export const dropdownAtom = atom<DropdownState>({
-  visible: false,
-  items: [],
-  selectedIndex: 0,
-});
-
-export const dropdownSelectionAtom = atom<DropdownItem | null>(null);
-
-// ── UI 状态 atoms ──────────────────────────────────────
-
-/** MessageBar 消息列表 */
-export const messageBarItemsAtom = atom<Array<{ id: string; text: string }>>([]);
-
-/** 大模型思考文案（当前流式输出） */
-export const thinkingTextAtom = atom('');
 
 // ── Session plugin atoms ────────────────────────────────
 
@@ -119,12 +103,9 @@ export interface ToolCallData {
   displayText: string;
 }
 
-/** 工具调用列表 */
-export const toolCallsAtom = atom<ToolCallData[]>([]);
-
-/** InputBar 右侧状态动画（内部状态机） */
+/** InputBar 状态机 */
 export type InputBarStatus = 'idle' | 'completed' | 'error';
-/** InputBar 展示信息（驱动 UI 渲染） */
+/** InputBar 展示信息（驱动 UI 渲染） — 已迁移到 InputStatusUI.atomData */
 export type InputBarInfo =
   | { type: 'idle' }
   | { type: 'connecting' }
@@ -133,4 +114,3 @@ export type InputBarInfo =
   | { type: 'completed'; elapsedMs?: number }
   | { type: 'error'; message?: string };
 export const inputBarStatusAtom = atom<InputBarStatus>('idle');
-export const inputBarInfoAtom = atom<InputBarInfo>({ type: 'idle' });

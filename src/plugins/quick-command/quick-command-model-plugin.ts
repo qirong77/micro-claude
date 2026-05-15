@@ -36,7 +36,8 @@ export class QuickCommandModelPlugin extends MicaPlugin {
           (i) => i.key === `${currentModel}::${currentEffort}`,
         );
 
-        this.store.dropdown.set({
+        // 通过 UI 组件的 atom 设置 dropdown 状态
+        this.agent.ui.DropDown.atomData.dropdown.set({
           visible: true,
           items,
           selectedIndex: activeIdx >= 0 ? activeIdx : 0,
@@ -46,7 +47,8 @@ export class QuickCommandModelPlugin extends MicaPlugin {
       },
     });
 
-    this.store.dropdownSelection.listen((item) => {
+    // 通过 UI 组件的事件监听选中
+    this.agent.ui.DropDown.emitter.on('select', (item) => {
       if (!item) return;
       const parts = item.key.split('::');
       if (parts.length === 2) {

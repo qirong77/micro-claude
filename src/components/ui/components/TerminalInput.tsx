@@ -7,11 +7,10 @@ import { useSchedulState } from '../hooks';
 import {
   inputValueAtom,
   cursorAtom,
-  dropdownAtom,
-  dropdownSelectionAtom,
 } from '../../../store';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './DropDown/CommandDropdown.js';
+import { DropDownUI } from './DropDown/index.js';
 import stringWidth from 'string-width';
 import { getImageFromClipboard, saveImage, hasImageInClipboard } from '../utils/imagePaste.js';
 
@@ -156,7 +155,7 @@ export function TerminalInput(props: {
   const value = useSchedulState(inputValueAtom);
   const cursor = useSchedulState(cursorAtom);
   const [HistoryInputs, setHistoryInputs] = useState(loadHistory());
-  const dropdownVisible = useSchedulState(dropdownAtom).visible;
+  const dropdownVisible = useSchedulState(DropDownUI.atomData.dropdown).visible;
   const promptGlyph = '❯\u00A0';
   const totalCols = stdout?.columns ?? 80;
   const inputCols = Math.max(1, totalCols - stringWidth(promptGlyph));
@@ -240,22 +239,23 @@ export function TerminalInput(props: {
   }
 
   useInput((ch, key) => {
-    const dd = dropdownAtom.get();
+    const dd = DropDownUI.atomData.dropdown.get();
 
     // ── Dropdown: confirm selection on Enter ───────────────────────────────
     if (dd.visible && key.return && !key.shift && !key.meta) {
       const items = dd.items;
       const idx = dd.selectedIndex;
       if (idx >= 0 && idx < items.length) {
-        dropdownSelectionAtom.set(items[idx]!);
+        DropDownUI.atomData.selection.set(items[idx]!);
+        DropDownUI.emitter.emit('select', items[idx]!);
       }
-      dropdownAtom.set({ ...dd, visible: false, selectedIndex: 0 });
+      DropDownUI.atomData.dropdown.set({ ...dd, visible: false, selectedIndex: 0 });
       return;
     }
 
     // ── Dropdown: escape to close ──────────────────────────────────────────
     if (dd.visible && key.escape) {
-      dropdownAtom.set({ ...dd, visible: false, selectedIndex: 0 });
+      DropDownUI.atomData.dropdown.set({ ...dd, visible: false, selectedIndex: 0 });
       return;
     }
 
@@ -263,14 +263,14 @@ export function TerminalInput(props: {
     if (dd.visible) {
       const items = dd.items;
       if (key.upArrow) {
-        dropdownAtom.set({
+        DropDownUI.atomData.dropdown.set({
           ...dd,
           selectedIndex: dd.selectedIndex <= 0 ? items.length - 1 : dd.selectedIndex - 1,
         });
         return;
       }
       if (key.downArrow) {
-        dropdownAtom.set({
+        DropDownUI.atomData.dropdown.set({
           ...dd,
           selectedIndex: dd.selectedIndex >= items.length - 1 ? 0 : dd.selectedIndex + 1,
         });
