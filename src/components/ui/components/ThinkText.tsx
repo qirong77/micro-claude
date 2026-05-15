@@ -3,7 +3,7 @@ import { Box, Text } from '@anthropic/ink';
 import { thinkingTextAtom } from '../../../store/index.js';
 import { useSchedulState } from '../hooks/useSchedulState.js';
 
-const MAX_LINES = 50;
+const MAX_LINES = 16 ;
 
 export const ThinkText = React.memo(function ThinkText(): React.ReactNode {
   const text = useSchedulState(thinkingTextAtom);
