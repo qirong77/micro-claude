@@ -48,7 +48,7 @@ export function showQuickCommands(query: string): void {
     visible: true,
     items,
     selectedIndex: 0,
-    title: 'quick commands:',
+    title: '',
     emptyMessage: 'no matching commands',
   });
   inputDisabledAtom.set(true);
