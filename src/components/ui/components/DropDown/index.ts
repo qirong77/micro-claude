@@ -2,6 +2,11 @@ import mitt from 'mitt';
 import type { DropdownItem } from './CommandDropdown.js';
 import { DropDownSelect } from './DropDownSelect.js';
 import { dropdownAtom, selectionAtom } from '../../../../store/agentAtom.js';
+import {
+  showQuickCommands,
+  hideQuickCommands,
+  handleDropdownKey,
+} from './quickCommandHandler.js';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -20,5 +25,11 @@ export const DropDownUI = {
   atomData: {
     dropdown: dropdownAtom,
     selection: selectionAtom,
+  },
+  /** 快捷命令下拉菜单逻辑（由 TerminalInput 调用） */
+  quickCommand: {
+    show: showQuickCommands,
+    hide: hideQuickCommands,
+    handleKey: handleDropdownKey,
   },
 };

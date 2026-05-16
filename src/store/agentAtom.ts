@@ -143,6 +143,8 @@ export const toolCallsAtom = atom<ToolCallData[]>([]);
 // ═══════════════════════════════════════════════════════════
 
 export const terminalInputTextAtom = atom('');
+/** 当快捷命令下拉菜单可见时为 true，TerminalInput 禁用光标移动（但保留输入能力） */
+export const inputDisabledAtom = atom(false);
 
 // ═══════════════════════════════════════════════════════════
 // Quick Command type (shared by plugins & UI)

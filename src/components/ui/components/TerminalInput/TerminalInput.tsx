@@ -1,10 +1,16 @@
-import { Box, Text } from "@anthropic/ink";
+import { Box, Text, useInput } from "@anthropic/ink";
 import React from "react";
 import { useCallback, useState } from "react";
 import { SimpleTextInput } from "./Input";
 import { C } from "../../data";
 import mitt from 'mitt'
-import { terminalInputTextAtom } from '../../../../store/agentAtom.js';
+import { useSchedulState } from '../../hooks';
+import {
+  terminalInputTextAtom,
+  inputDisabledAtom,
+} from '../../../../store/agentAtom.js';
+import { DropDownUI } from '../DropDown/index.js';
+
 type Events = {
   submit: string
 }
@@ -17,16 +23,29 @@ function TerminalInput() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const columns = process.stdout.columns - 6;
 
+  // 拦截键盘事件：当快捷命令下拉菜单可见时，委托给 DropDown 模块处理
+  useInput((_input, key) => {
+    if (DropDownUI.quickCommand.handleKey(key)) {
+      // 事件已被消费，清空本地方便状态
+      setInput('');
+      setCursorOffset(0);
+    }
+  });
+
   const onSubmit = useCallback(
     (value: string) => {
-      if (value.trim()) {
-        const trimmed = value.trim();
-        setPrevInputs(prev => [...prev, trimmed]);
-        setHistoryIndex(-1);
-        setInput('');
-        setCursorOffset(0);
-        emitter.emit('submit',trimmed)
-      }
+      if (!value.trim()) return;
+
+      // 下拉菜单可见时的 Enter/Tab/Escape 由 useInput → handleDropdownKey 处理，
+      // 但 SimpleTextInput 也会触发 onSubmit，这里需要防御
+      if (inputDisabledAtom.get()) return;
+
+      const trimmed = value.trim();
+      setPrevInputs(prev => [...prev, trimmed]);
+      setHistoryIndex(-1);
+      setInput('');
+      setCursorOffset(0);
+      emitter.emit('submit', trimmed);
     },
     [],
   );
@@ -37,9 +56,19 @@ function TerminalInput() {
 
   const handleChange = useCallback((value: string) => {
     setInput(value);
+
+    // 检测 '/' 开头 → 委托给 DropDown 模块显示快捷命令列表
+    if (value.startsWith('/') && value.length >= 1) {
+      const query = value.slice(1);
+      DropDownUI.quickCommand.show(query);
+    } else {
+      DropDownUI.quickCommand.hide();
+    }
   }, []);
 
   const onHistoryUp = useCallback(() => {
+    // 下拉菜单可见时，↑↓ 由 useInput → handleDropdownKey 处理
+    if (inputDisabledAtom.get()) return;
     if (prevInputs.length === 0) return;
     const newIndex = historyIndex < prevInputs.length - 1 ? historyIndex + 1 : historyIndex;
     if (newIndex !== historyIndex) {
@@ -51,6 +80,8 @@ function TerminalInput() {
   }, [historyIndex, prevInputs]);
 
   const onHistoryDown = useCallback(() => {
+    // 下拉菜单可见时，↑↓ 由 useInput → handleDropdownKey 处理
+    if (inputDisabledAtom.get()) return;
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
@@ -63,6 +94,9 @@ function TerminalInput() {
       setCursorOffset(0);
     }
   }, [historyIndex, prevInputs]);
+
+  // 读取 inputDisabledAtom：下拉菜单可见时禁用光标，并阻止历史/提交回调
+  const inputDisabled = useSchedulState(inputDisabledAtom);
 
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -93,6 +127,7 @@ function TerminalInput() {
             onChangeCursorOffset={setCursorOffset}
             onHistoryUp={onHistoryUp}
             onHistoryDown={onHistoryDown}
+            showCursor={!inputDisabled}
           />
         </Box>
       </Box>
