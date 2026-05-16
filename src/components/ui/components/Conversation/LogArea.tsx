@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Text } from '@anthropic/ink';
 import type Anthropic from '@anthropic-ai/sdk';
 import { C } from '../../data.js';
-import { messagesAtom } from '../../../agent/agentAtom.js';
+import { messagesAtom } from '../../../../store/agentAtom.js';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
 import { MarkdownRenderByLine, classifyLine, type BlockType } from './MarkdownRenderByLine.js';
 

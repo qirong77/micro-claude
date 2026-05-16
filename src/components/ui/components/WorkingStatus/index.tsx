@@ -1,27 +1,13 @@
 import { Box, Text } from '@anthropic/ink';
 import React from 'react';
-import { atom } from 'nanostores';
 import { useSchedulState } from '../../hooks/index.js';
-import { modelAtom, effortAtom } from '../../../agent/agentAtom.js';
+import { modelAtom, effortAtom, workingStatusAtom } from '../../../../store/agentAtom.js';
 import { C } from '../../data.js';
 import { Spin } from '../common/Spin.js';
 
-// ── Types ──────────────────────────────────────────────
+// ── Types (re-exported from agentAtom for convenience) ─
 
-export type InputBarStatus = 'idle' | 'completed' | 'error';
-
-export type InputBarInfo =
-  | { type: 'idle' }
-  | { type: 'connecting' }
-  | { type: 'thinking' }
-  | { type: 'calling_tool' }
-  | { type: 'completed'; elapsedMs?: number }
-  | { type: 'error'; message?: string };
-
-// ── 响应式数据 ────────────────────────────────────────
-
-export const workingStatusAtom = atom<InputBarInfo>({ type: 'idle' });
-export const inputBarStatusAtom = atom<InputBarStatus>('idle');
+export type { InputBarStatus, InputBarInfo } from '../../../../store/agentAtom.js';
 
 // ── 渲染组件 ──────────────────────────────────────────
 

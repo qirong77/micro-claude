@@ -1,11 +1,7 @@
 import React from 'react';
 import { Box, Text } from '@anthropic/ink';
-import { atom } from 'nanostores';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
-
-// ── 响应式数据 ────────────────────────────────────────
-
-const thinkingTextAtom = atom('');
+import { thinkingTextAtom } from '../../../../store/agentAtom.js';
 
 // ── 渲染组件 ──────────────────────────────────────────
 

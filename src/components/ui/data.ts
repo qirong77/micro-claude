@@ -13,11 +13,7 @@ export const C = {
 
 // ── Quick commands ──────────────────────────────────────
 
-export interface Command {
-  name: string;
-  description: string;
-  action: (arg?: string) => void;
-}
+export type { Command } from '../../store/agentAtom.js';
 
 // ── Input reducer types (shared with plugins) ──────────
 

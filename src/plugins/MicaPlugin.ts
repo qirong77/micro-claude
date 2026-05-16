@@ -1,8 +1,12 @@
-import { atom, type ReadableAtom, type WritableAtom } from 'nanostores';
+import { type ReadableAtom, type WritableAtom } from 'nanostores';
 import type { IMicaAgent } from '../core/agent';
-import type { Command } from '../components/ui/data';
 import type Anthropic from '@anthropic-ai/sdk';
 import { uuid } from '../utils/uuid';
+import {
+  quickCommandsAtom,
+  type Command,
+  type SessionMeta,
+} from '../store/agentAtom.js';
 
 // ── 插件可用的 atom 依赖类型 ───────────────────────────
 
@@ -12,14 +16,14 @@ export interface PluginAtoms {
   effort: WritableAtom<string>;
   modelOptions: ReadableAtom<Array<{ name: string; label: string }>>;
   effortOptions: ReadableAtom<Array<{ name: string; label: string }>>;
-  sessionsIndex: WritableAtom<import('../plugins/quick-command/quick-command-session-plugin.js').SessionMeta[]>;
+  sessionsIndex: WritableAtom<SessionMeta[]>;
   currentSessionId: WritableAtom<string>;
   sessionSwitch: WritableAtom<string | null>;
 }
 
 // ── 快速命令列表（由插件注册，插件内部闭环） ────────────
 
-export const quickCommandsAtom = atom<Command[]>([]);
+export { quickCommandsAtom, type SessionMeta };
 
 /**
  * MicaPlugin 基类

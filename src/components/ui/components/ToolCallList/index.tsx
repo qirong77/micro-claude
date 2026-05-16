@@ -1,22 +1,12 @@
 import React from 'react';
 import { Box, Text } from '@anthropic/ink';
-import { atom } from 'nanostores';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
 import { ThinkTextUI } from '../ThinkText/index.js';
+import { toolCallsAtom } from '../../../../store/agentAtom.js';
 
-// ── Types ──────────────────────────────────────────────
+// ── Types (re-exported from agentAtom for convenience) ─
 
-export interface ToolCallData {
-  id: string;
-  toolName: string;
-  toolInput: Record<string, any>;
-  completed: boolean;
-  displayText: string;
-}
-
-// ── 响应式数据 ────────────────────────────────────────
-
-const toolCallsAtom = atom<ToolCallData[]>([]);
+export type { ToolCallData } from '../../../../store/agentAtom.js';
 
 // ── 渲染组件 ──────────────────────────────────────────
 

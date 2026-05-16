@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { useSchedulState } from '../hooks';
-import { inputValueAtom, cursorAtom } from './DropDown/DropDownSelect.js';
+import { inputValueAtom, cursorAtom } from '../../../store/agentAtom.js';
 import { C, type Command } from '../data.js';
 import { CommandDropdown } from './DropDown/CommandDropdown.js';
 import { DropDownUI } from './DropDown/index.js';

@@ -4,15 +4,14 @@ import { useCallback, useState } from "react";
 import { SimpleTextInput } from "./Input";
 import { C } from "../../data";
 import mitt from 'mitt'
-import { atom } from "nanostores";
+import { terminalInputTextAtom } from '../../../../store/agentAtom.js';
 type Events = {
   submit: string
 }
 const emitter = mitt<Events>()
-const atomText = atom('')
 
 function TerminalInput() {
-  const [input, setInput] = useState(atomText.get());
+  const [input, setInput] = useState(terminalInputTextAtom.get());
   const [cursorOffset, setCursorOffset] = useState(0);
   const [prevInputs, setPrevInputs] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -104,5 +103,5 @@ function TerminalInput() {
 export const TerminalInputUI = {
   renderFn:TerminalInput,
   emitter,
-  atomText
+  atomText: terminalInputTextAtom,
 }

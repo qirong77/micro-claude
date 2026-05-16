@@ -1,9 +1,17 @@
 import { agentTurn } from '../components/agent/agentTurn';
 import { ui } from '../components/ui';
-import { inputBarStatusAtom } from '../components/ui/components/WorkingStatus/index.js';
 import { handleToolUseState, handleStreamText, handleThinking } from './handleUIFlush';
-import { messagesAtom, modelAtom, effortAtom, modelOptionsAtom, effortOptionsAtom } from '../components/agent/agentAtom.js';
-import { sessionsIndexAtom, currentSessionIdAtom, sessionSwitchAtom } from '../plugins/quick-command/quick-command-session-plugin.js';
+import {
+  messagesAtom,
+  modelAtom,
+  effortAtom,
+  modelOptionsAtom,
+  effortOptionsAtom,
+  inputBarStatusAtom,
+  sessionsIndexAtom,
+  currentSessionIdAtom,
+  sessionSwitchAtom,
+} from '../store/agentAtom.js';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 
 // ── 用户提交入口 ──

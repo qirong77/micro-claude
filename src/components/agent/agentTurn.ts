@@ -8,9 +8,9 @@ import {
   maxTokensAtom,
   effortAtom,
   EFFORT_TOKENS,
-} from './agentAtom.js';
+  workingStatusAtom,
+} from '../../store/agentAtom.js';
 import { ui } from '../ui/index.js';
-import { workingStatusAtom } from '../ui/components/WorkingStatus/index.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 import mitt from 'mitt';

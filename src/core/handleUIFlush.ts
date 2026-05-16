@@ -1,7 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { agentTurn } from '../components/agent/agentTurn';
-import { messagesAtom } from '../components/agent/agentAtom.js';
+import { messagesAtom } from '../store/agentAtom.js';
 import { ui } from '../components/ui';
 import { getToolDisplayText } from '../components/tools';
 

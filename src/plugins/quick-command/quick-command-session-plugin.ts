@@ -1,21 +1,16 @@
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { atom } from 'nanostores';
 import { MicaPlugin } from '../MicaPlugin';
+import {
+  sessionsIndexAtom,
+  currentSessionIdAtom,
+  sessionSwitchAtom,
+  type SessionMeta,
+} from '../../store/agentAtom.js';
 
-// ── Session 相关类型与 atom ────────────────────────────
-
-export interface SessionMeta {
-  id: string;
-  title: string;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export const sessionsIndexAtom = atom<SessionMeta[]>([]);
-export const currentSessionIdAtom = atom<string>('');
-export const sessionSwitchAtom = atom<string | null>(null);
+// Re-export for backward compatibility
+export type { SessionMeta };
 
 const SESSIONS_DIR = resolve(process.env.HOME || '~', '.mica', 'sessions');
 const INDEX_PATH = resolve(SESSIONS_DIR, 'index.json');

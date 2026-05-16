@@ -1,17 +1,11 @@
 import mitt from 'mitt';
-import { atom } from 'nanostores';
 import type { DropdownItem } from './CommandDropdown.js';
 import { DropDownSelect } from './DropDownSelect.js';
+import { dropdownAtom, selectionAtom } from '../../../../store/agentAtom.js';
 
 // ── Types ──────────────────────────────────────────────
 
-export interface DropdownState {
-  visible: boolean;
-  items: DropdownItem[];
-  selectedIndex: number;
-  title?: string;
-  emptyMessage?: string;
-}
+export type { DropdownItem, DropdownState } from '../../../../store/agentAtom.js';
 
 type Events = {
   /** 选中了下拉项 */
@@ -19,8 +13,6 @@ type Events = {
 };
 
 const emitter = mitt<Events>();
-const dropdownAtom = atom<DropdownState>({ visible: false, items: [], selectedIndex: 0 });
-const selectionAtom = atom<DropdownItem | null>(null);
 
 export const DropDownUI = {
   renderFn: DropDownSelect,
