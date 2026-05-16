@@ -1,4 +1,4 @@
-import { MicaPlugin, type PluginAtoms } from '../MicaPlugin';
+import { MicaPlugin, } from '../MicaPlugin';
 import type { EffortLevel } from '../../store/agentAtom.js';
 
 export class QuickCommandModelPlugin extends MicaPlugin {
