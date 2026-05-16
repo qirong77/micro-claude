@@ -6,6 +6,7 @@ import {
   showQuickCommands,
   hideQuickCommands,
   handleDropdownKey,
+  setSelectEmitter,
 } from './quickCommandHandler.js';
 
 // ── Types ──────────────────────────────────────────────
@@ -18,6 +19,11 @@ type Events = {
 };
 
 const emitter = mitt<Events>();
+
+// 注入 emitter 到 quickCommandHandler，用于二级菜单选择时通知插件
+setSelectEmitter((item: DropdownItem) => {
+  emitter.emit('select', item);
+});
 
 export const DropDownUI = {
   renderFn: DropDownSelect,

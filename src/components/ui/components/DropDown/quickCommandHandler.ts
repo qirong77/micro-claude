@@ -16,6 +16,15 @@ import {
   type DropdownItem,
 } from '../../../../store/agentAtom.js';
 
+// ── Emitter ref（由 index.ts 注入，避免循环引用）─────────
+
+let _emitSelect: ((item: DropdownItem) => void) | null = null;
+
+/** 由 DropDown/index.ts 调用，注入 select 事件发射器 */
+export function setSelectEmitter(emit: (item: DropdownItem) => void): void {
+  _emitSelect = emit;
+}
+
 // ── 公共 API ──────────────────────────────────────────
 
 /** TerminalInput 在 handleChange 中调用：当输入以 '/' 开头时 */
@@ -116,12 +125,33 @@ function executeSelected(): void {
   const selected = dropdown.items[idx];
   if (!selected) return;
 
+  // 尝试匹配快捷命令（主菜单场景）
   const commands = quickCommandsAtom.get();
   const cmd = commands.find((c) => c.name === selected.key);
+
   if (cmd) {
+    // 执行命令 action
     cmd.action();
+
+    // 如果命令打开了二级下拉菜单（如 /model, /session），不要关闭
+    const afterDropdown = dropdownAtom.get();
+    if (afterDropdown.visible && afterDropdown.items.length > 0) {
+      // 二级菜单：保持 inputDisabledAtom=true，清空搜索值
+      inputValueAtom.set('');
+      return;
+    }
+
+    // 单次命令（如 /clear），关闭所有
+    closeAndClear();
+    return;
   }
 
+  // 不是快捷命令 → 二级菜单选中（如 model/election 列表项）
+  // 通过 selectionAtom + emitter 通知插件
+  selectionAtom.set(selected);
+  if (_emitSelect) {
+    _emitSelect(selected);
+  }
   closeAndClear();
 }
 
