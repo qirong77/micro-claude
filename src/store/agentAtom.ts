@@ -30,9 +30,7 @@ export interface EffortOption {
 
 // ── WorkingStatus types ───────────────────────────────
 
-export type InputBarStatus = 'idle' | 'completed' | 'error';
-
-export type InputBarInfo =
+export type WorkingStatus =
   | { type: 'idle' }
   | { type: 'connecting' }
   | { type: 'thinking' }
@@ -117,8 +115,7 @@ export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
 // UI atoms — WorkingStatus
 // ═══════════════════════════════════════════════════════════
 
-export const workingStatusAtom = atom<InputBarInfo>({ type: 'idle' });
-export const inputBarStatusAtom = atom<InputBarStatus>('idle');
+export const workingStatusAtom = atom<WorkingStatus>({ type: 'idle' });
 
 // ═══════════════════════════════════════════════════════════
 // UI atoms — DropDown

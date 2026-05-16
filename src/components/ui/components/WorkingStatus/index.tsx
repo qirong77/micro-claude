@@ -7,7 +7,7 @@ import { Spin } from '../common/Spin.js';
 
 // ── Types (re-exported from agentAtom for convenience) ─
 
-export type { InputBarStatus, InputBarInfo } from '../../../../store/agentAtom.js';
+
 
 // ── 渲染组件 ──────────────────────────────────────────
 

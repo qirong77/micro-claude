@@ -7,10 +7,10 @@ import {
   effortAtom,
   modelOptionsAtom,
   effortOptionsAtom,
-  inputBarStatusAtom,
   sessionsIndexAtom,
   currentSessionIdAtom,
   sessionSwitchAtom,
+  workingStatusAtom,
 } from '../store/agentAtom.js';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 
@@ -18,16 +18,22 @@ import { MicaPlugin } from '../plugins/MicaPlugin';
 ui.TerminalInput.emitter.on('submit', async (text) => {
   const startTime = Date.now();
 
-  inputBarStatusAtom.set('idle');
+  workingStatusAtom.set({
+    type:'idle'
+  });
   try {
     await agentTurn.run(text, () => {
       ui.MessageBar.emitter.emit('clear');
       ui.ThinkText.atomData.set('');
     });
-    inputBarStatusAtom.set('completed');
+    workingStatusAtom.set({
+      type:'completed'
+    });
     ui.WorkingStatus.atomData.set({ type: 'completed', elapsedMs: Date.now() - startTime });
   } catch (error) {
-    inputBarStatusAtom.set('error');
+    workingStatusAtom.set({
+      type:'error'
+    });
     ui.WorkingStatus.atomData.set({
       type: 'error',
       message: error instanceof Error ? error.message : String(error),
