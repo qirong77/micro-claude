@@ -1,14 +1,14 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { agentTurn } from '../components/agent/agentTurn';
-import { messagesAtom } from '../store/agentAtom.js';
+import { messagesAtom, toolCallsAtom } from '../store/agentAtom.js';
 import { ui } from '../components/ui';
 import { getToolDisplayText } from '../components/tools';
 
 export function handleToolUseState() {
   agentTurn.events.on('stream:create', (stream) => {
     stream.on('text', () => {
-      ui.ToolCallList.atomData.set([]);
+      toolCallsAtom.set([]);
       ui.LogList.atomData.set('');
       ui.WorkingStatus.atomData.set({ type: 'idle' });
     });
@@ -16,15 +16,15 @@ export function handleToolUseState() {
   agentTurn.events.on('tool:use', ({ toolUseId, toolName, toolInput, completed }) => {
     ui.WorkingStatus.atomData.set({ type: 'calling_tool' });
     const displayText = getToolDisplayText(toolName, toolInput);
-    const existing = ui.ToolCallList.atomData.get();
+    const existing = toolCallsAtom.get();
     const idx = existing.findIndex((t) => t.id === toolUseId);
     
     if (idx !== -1) {
       const updated = [...existing];
       updated[idx] = { ...updated[idx], completed, displayText };
-      ui.ToolCallList.atomData.set(updated);
+      toolCallsAtom.set(updated);
     } else {
-      ui.ToolCallList.atomData.set([
+      toolCallsAtom.set([
         ...existing,
         { id: toolUseId, toolName, toolInput, completed, displayText },
       ]);

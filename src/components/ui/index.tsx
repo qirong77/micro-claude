@@ -7,7 +7,6 @@ import { TerminalInputUI } from './components/TerminalInput/TerminalInput.js';
 import { ConversationUI } from './components/Conversation/index.js';
 import { MessageBarUI } from './components/MessageBar/index.js';
 import { LogListUI } from './components/LogList/index.js';
-import { ToolCallListUI } from './components/ToolCallList/index.js';
 import { WorkingStatusUI } from './components/WorkingStatus/index.js';
 import { DropDownUI } from './components/DropDown/index.js';
 
@@ -32,7 +31,6 @@ export const ui = {
   Conversation: ConversationUI,
   MessageBar: MessageBarUI,
   LogList: LogListUI,
-  ToolCallList: ToolCallListUI,
   WorkingStatus: WorkingStatusUI,
   DropDown: DropDownUI,
   run,

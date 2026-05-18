@@ -2,12 +2,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import {
-  messagesAtom,
-  model,
-  EFFORT_TOKENS,
-  workingStatusAtom,
-} from '../../store/agentAtom.js';
+import { messagesAtom, model, EFFORT_TOKENS, workingStatusAtom } from '../../store/agentAtom.js';
 import { ui } from '../ui/index.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
@@ -17,7 +12,12 @@ import mitt from 'mitt';
 
 export type AgentTurnEvents = {
   'stream:create': MessageStream<null>;
-  'tool:use': { toolUseId: string; toolName: string; toolInput: Record<string, any>; completed: boolean };
+  'tool:use': {
+    toolUseId: string;
+    toolName: string;
+    toolInput: Record<string, any>;
+    completed: boolean;
+  };
 };
 
 // ── Public types ───────────────────────────────────────
@@ -59,12 +59,11 @@ class AgentTurn {
       max_tokens: model.maxTokens.get(),
       system: systemPrompt,
       messages,
-      thinking: effort === 'none'
-        ? { type: 'disabled' as const }
-        : { type: 'enabled' as const, budget_tokens: EFFORT_TOKENS[effort] },
-      output_config: effort !== 'none'
-        ? { effort }
-        : undefined,
+      thinking:
+        effort === 'none'
+          ? { type: 'disabled' as const }
+          : { type: 'enabled' as const, budget_tokens: EFFORT_TOKENS[effort] },
+      output_config: effort !== 'none' ? { effort } : undefined,
       tools: toolDefinitions,
     }) as MessageStream<null>;
     this.events.emit('stream:create', stream);
@@ -73,10 +72,17 @@ class AgentTurn {
     stream.on('contentBlock', (content) => {
       if (content.type === 'tool_use') {
         hasToolUse = true;
-        completedToolUses.push({
+        const tool = {
           id: content.id,
           name: content.name,
           input: content.input as Record<string, any>,
+        };
+        completedToolUses.push(tool);
+        this.events.emit('tool:use', {
+          toolUseId: tool.id,
+          toolName: tool.name,
+          toolInput: tool.input,
+          completed: false,
         });
       }
     });
@@ -85,10 +91,6 @@ class AgentTurn {
     messagesAtom.set([...messages, finalMessage]);
     // 执行工具并收集结果
     if (completedToolUses.length > 0) {
-      for (const tool of completedToolUses) {
-        this.events.emit('tool:use', { toolUseId: tool.id, toolName: tool.name, toolInput: tool.input, completed: false });
-      }
-
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       const settled = await Promise.allSettled(
         completedToolUses.map((tool) => executeTool(tool.name, tool.input)),
@@ -106,7 +108,12 @@ class AgentTurn {
                   : String(r.reason)
               }`;
         toolResults.push({ type: 'tool_result', tool_use_id: tool.id, content: result });
-        this.events.emit('tool:use', { toolUseId: tool.id, toolName: tool.name, toolInput: tool.input, completed: true });
+        this.events.emit('tool:use', {
+          toolUseId: tool.id,
+          toolName: tool.name,
+          toolInput: tool.input,
+          completed: true,
+        });
 
         // 如果工具执行失败，标记为错误状态
         if (r.status === 'rejected') {

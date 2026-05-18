@@ -6,6 +6,7 @@ import {
   model,
   session,
   workingStatusAtom,
+  toolCallsAtom,
 } from '../store/agentAtom.js';
 import { MicaPlugin } from '../plugins/MicaPlugin';
 
@@ -41,7 +42,7 @@ agentTurn.events.on('stream:create', (stream) => {
   stream.on('end', () => {
     ui.MessageBar.emitter.emit('clear');
     ui.LogList.atomData.set('');
-    ui.ToolCallList.atomData.set([]);
+    toolCallsAtom.set([]);
   });
 });
 
