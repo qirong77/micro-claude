@@ -127,10 +127,10 @@ export const inputValueAtom = atom('');
 export const cursorAtom = atom(0);
 
 // ═══════════════════════════════════════════════════════════
-// UI atoms — ThinkText
+// UI atoms — LogList
 // ═══════════════════════════════════════════════════════════
 
-export const thinkingTextAtom = atom('');
+export const logTextAtom = atom('');
 
 // ═══════════════════════════════════════════════════════════
 // UI atoms — ToolCallList

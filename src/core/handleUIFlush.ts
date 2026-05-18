@@ -9,7 +9,7 @@ export function handleToolUseState() {
   agentTurn.events.on('stream:create', (stream) => {
     stream.on('text', () => {
       ui.ToolCallList.atomData.set([]);
-      ui.ThinkText.atomData.set('');
+      ui.LogList.atomData.set('');
       ui.WorkingStatus.atomData.set({ type: 'idle' });
     });
   });
@@ -38,7 +38,7 @@ export function handleThinking() {
     let thinkingText = '';
     stream.on('thinking', (chunk) => {
       thinkingText += chunk;
-      ui.ThinkText.atomData.set(thinkingText);
+      ui.LogList.atomData.set(thinkingText);
     });
   });
 }

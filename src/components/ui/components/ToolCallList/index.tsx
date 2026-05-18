@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from '@anthropic/ink';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
-import { ThinkTextUI } from '../ThinkText/index.js';
+import { LogListUI } from '../LogList/index.js';
 import { toolCallsAtom } from '../../../../store/agentAtom.js';
 
 // ── Types (re-exported from agentAtom for convenience) ─
@@ -12,7 +12,7 @@ export type { ToolCallData } from '../../../../store/agentAtom.js';
 
 export const ToolCallList = React.memo(function ToolCallList(): React.ReactNode {
   const toolCalls = useSchedulState(toolCallsAtom);
-  const thinkingText = useSchedulState(ThinkTextUI.atomData);
+  const thinkingText = useSchedulState(LogListUI.atomData);
   if (!toolCalls || toolCalls.length === 0 || thinkingText) return null;
 
   const sorted = [...toolCalls].sort((a, b) => Number(a.completed) - Number(b.completed));

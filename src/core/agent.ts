@@ -24,7 +24,7 @@ ui.TerminalInput.emitter.on('submit', async (text) => {
   try {
     await agentTurn.run(text, () => {
       ui.MessageBar.emitter.emit('clear');
-      ui.ThinkText.atomData.set('');
+      ui.LogList.atomData.set('');
     });
     workingStatusAtom.set({
       type:'completed'
@@ -45,7 +45,7 @@ ui.TerminalInput.emitter.on('submit', async (text) => {
 agentTurn.events.on('stream:create', (stream) => {
   stream.on('end', () => {
     ui.MessageBar.emitter.emit('clear');
-    ui.ThinkText.atomData.set('');
+    ui.LogList.atomData.set('');
     ui.ToolCallList.atomData.set([]);
   });
 });
