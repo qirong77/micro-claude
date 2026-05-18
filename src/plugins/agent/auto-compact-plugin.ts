@@ -14,16 +14,53 @@ export class AutoCompactPlugin extends MicaPlugin {
 }
 
 function compactMessages(messages: Anthropic.MessageParam[]): Anthropic.MessageParam[] {
-  return messages.map((msg) => {
+  const toolResults: { msgIdx: number; blockIdx: number }[] = [];
+  messages.forEach((msg, msgIdx) => {
+    if (msg.role !== 'user' || !Array.isArray(msg.content)) return;
+    msg.content.forEach((block, blockIdx) => {
+      if (block.type === 'tool_result') {
+        toolResults.push({ msgIdx, blockIdx });
+      }
+    });
+  });
+
+  if (toolResults.length <= 5) {
+    return messages.map(truncateToolResults);
+  }
+
+  const keepSet = new Set(
+    toolResults.slice(-5).map((tr) => `${tr.msgIdx}:${tr.blockIdx}`)
+  );
+
+  return messages.map((msg, msgIdx) => {
     if (msg.role !== 'user' || !Array.isArray(msg.content)) return msg;
 
-    const newContent = msg.content.map((block) => {
-      if (block.type !== 'tool_result') return block;
-      return applyLengthTruncation(block);
-    });
+    const newContent = msg.content
+      .map((block, blockIdx) => {
+        if (block.type !== 'tool_result') return block;
+        if (!keepSet.has(`${msgIdx}:${blockIdx}`)) return null;
+        return applyLengthTruncation(block);
+      })
+      .filter((block): block is Anthropic.ContentBlockParam => block !== null);
+
+    if (newContent.length === 0) {
+      return {
+        ...msg,
+        content: [{ type: 'text', text: '[较早的工具结果已省略]' }],
+      };
+    }
 
     return { ...msg, content: newContent };
   });
+}
+
+function truncateToolResults(msg: Anthropic.MessageParam): Anthropic.MessageParam {
+  if (msg.role !== 'user' || !Array.isArray(msg.content)) return msg;
+  const newContent = msg.content.map((block) => {
+    if (block.type !== 'tool_result') return block;
+    return applyLengthTruncation(block);
+  });
+  return { ...msg, content: newContent };
 }
 
 function applyLengthTruncation(block: Anthropic.ToolResultBlockParam): Anthropic.ToolResultBlockParam {
