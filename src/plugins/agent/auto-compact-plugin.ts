@@ -2,6 +2,8 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { MicaPlugin } from '../MicaPlugin';
 
 const MAX_TOOL_RESULT_LENGTH = 10000;
+const MAX_THINKING_LENGTH = 2000;
+const TOOL_RESULT_KEEP_COUNT = 10;
 
 export class AutoCompactPlugin extends MicaPlugin {
   onInstall(): void {
@@ -24,16 +26,18 @@ function compactMessages(messages: Anthropic.MessageParam[]): Anthropic.MessageP
     });
   });
 
-  if (toolResults.length <= 5) {
-    return messages.map(truncateToolResults);
+  if (toolResults.length <= TOOL_RESULT_KEEP_COUNT) {
+    return messages.map(truncateToolResults).map(compactThinking);
   }
 
   const keepSet = new Set(
-    toolResults.slice(-5).map((tr) => `${tr.msgIdx}:${tr.blockIdx}`)
+    toolResults.slice(-TOOL_RESULT_KEEP_COUNT).map((tr) => `${tr.msgIdx}:${tr.blockIdx}`)
   );
 
   return messages.map((msg, msgIdx) => {
-    if (msg.role !== 'user' || !Array.isArray(msg.content)) return msg;
+    if (msg.role !== 'user' || !Array.isArray(msg.content)) {
+      return compactThinking(msg);
+    }
 
     const newContent = msg.content
       .map((block, blockIdx) => {
@@ -52,6 +56,31 @@ function compactMessages(messages: Anthropic.MessageParam[]): Anthropic.MessageP
 
     return { ...msg, content: newContent };
   });
+}
+
+function compactThinking(msg: Anthropic.MessageParam): Anthropic.MessageParam {
+  if (msg.role !== 'assistant' || !Array.isArray(msg.content)) return msg;
+
+  const newContent = msg.content.map((block) => {
+    if (block.type !== 'thinking') return block;
+    return applyThinkingTruncation(block);
+  });
+
+  return { ...msg, content: newContent };
+}
+
+function applyThinkingTruncation(block: Anthropic.ThinkingBlockParam): Anthropic.ThinkingBlockParam {
+  if (typeof block.thinking !== 'string') return block;
+  if (block.thinking.length <= MAX_THINKING_LENGTH) return block;
+
+  const half = Math.floor(MAX_THINKING_LENGTH / 2);
+  return {
+    ...block,
+    thinking:
+      block.thinking.substring(0, half) +
+      `\n...[思考过程已压缩，原 ${block.thinking.length} 字符]...\n` +
+      block.thinking.substring(block.thinking.length - half),
+  };
 }
 
 function truncateToolResults(msg: Anthropic.MessageParam): Anthropic.MessageParam {
