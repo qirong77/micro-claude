@@ -4,6 +4,7 @@ import { QuickCommandLogPlugin } from './plugins/quick-command/quick-command-log
 import { QuickCommandClearPlugin } from './plugins/quick-command/quick-command-clear-plugin.js';
 import { QuickCommandModelPlugin } from './plugins/quick-command/quick-command-model-plugin.js';
 import { QuickCommandSessionPlugin } from './plugins/quick-command/quick-command-session-plugin.js';
+import { QuickCommandReviewPlugin } from './plugins/quick-command/quick-command-review.js';
 
 
 await MicaAgent.usePlugin(new ErrorHandlerPlugin());
@@ -11,6 +12,7 @@ await MicaAgent.usePlugin(new QuickCommandLogPlugin());
 await MicaAgent.usePlugin(new QuickCommandClearPlugin());
 await MicaAgent.usePlugin(new QuickCommandModelPlugin());
 await MicaAgent.usePlugin(new QuickCommandSessionPlugin());
+await MicaAgent.usePlugin(new QuickCommandReviewPlugin());
 
 
 MicaAgent.run();
