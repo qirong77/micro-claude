@@ -10,7 +10,6 @@ export function handleToolUseState() {
     stream.on('text', () => {
       toolCallsAtom.set([]);
       ui.LogList.atomData.set('');
-      ui.WorkingStatus.atomData.set({ type: 'idle' });
     });
   });
   agentTurn.events.on('tool:use', ({ toolUseId, toolName, toolInput, completed }) => {

@@ -26,9 +26,6 @@ interface LogItem {
 }
 
 export const Conversation = (): React.ReactNode => {
-  const [lastLineText, setLastLineText] = React.useState('');
-
-  let nextLastLine = '';
   const messages = useSchedulState(messagesAtom);
   const staticItems = messages.flatMap((raw, i): LogItem[] => {
     const msg = raw as LogMessage;
@@ -41,25 +38,11 @@ export const Conversation = (): React.ReactNode => {
       return [{ id: i, role: msg.role, text }];
     }
     if (msg.role === 'assistant') {
-      if (msg.status === 'streaming') {
-        const lastNewline = text.lastIndexOf('\n');
-        if (lastNewline === -1) {
-          nextLastLine = text;
-          return [];
-        }
-        nextLastLine = text.slice(lastNewline + 1);
-        const complete = text.slice(0, lastNewline);
-        return complete ? [{ id: i, role: 'assistant', text: complete }] : [];
-      }
+      const extractedMarkdown = text
       return [{ id: i, role: 'assistant', text }];
     }
     return [];
   }) satisfies LogItem[];
-
-  if (lastLineText !== nextLastLine) {
-    setLastLineText(nextLastLine);
-  }
-
   return (
     <Box flexDirection="column">
       {staticItems.map((item: LogItem) => {
@@ -76,12 +59,11 @@ export const Conversation = (): React.ReactNode => {
           );
         }
         return (
-          <Box key={item.id}>
+          <Box >
             <Markdown>{item.text}</Markdown>
           </Box>
         );
       })}
-      {lastLineText ? <Text>{lastLineText}</Text> : null}
     </Box>
   );
 };
