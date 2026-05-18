@@ -31,7 +31,7 @@ interface LogItem {
   type?: 'clear';
 }
 
-export const LogArea = (): React.ReactNode => {
+export const Conversation = (): React.ReactNode => {
   const [lastLineText, setLastLineText] = React.useState('');
 
   // 从流式 assistant 消息中提取最后的不完整行
