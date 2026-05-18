@@ -1,7 +1,7 @@
 import { Box, Text } from '@anthropic/ink';
 import React from 'react';
 import { useSchedulState } from '../../hooks/index.js';
-import { modelAtom, effortAtom, workingStatusAtom } from '../../../../store/agentAtom.js';
+import { model, workingStatusAtom } from '../../../../store/agentAtom.js';
 import { C } from '../../data.js';
 import { Spin } from '../common/Spin.js';
 
@@ -22,8 +22,8 @@ function formatElapsed(ms: number): string {
 
 export function WorkingStatus() {
   const info = useSchedulState(workingStatusAtom);
-  const model = useSchedulState(modelAtom);
-  const effort = useSchedulState(effortAtom);
+  const modelValue = useSchedulState(model.atom);
+  const effort = useSchedulState(model.effort);
 
   const content = (() => {
     switch (info.type) {
@@ -55,7 +55,7 @@ export function WorkingStatus() {
       </Box>
       <Box flexShrink={0} paddingRight={4}>
         <Text color={C.dim} wrap="wrap">
-          {model} · {effort}
+          {modelValue} · {effort}
         </Text>
       </Box>
     </Box>

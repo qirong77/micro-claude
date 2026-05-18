@@ -4,15 +4,13 @@
  * 由 TerminalInput 调用，负责：
  * - 检测 '/' 输入 → 显示/过滤快捷命令列表
  * - 处理键盘事件（Escape/Tab/↑↓/Enter）当菜单可见时
- * - 管理 dropdownAtom / inputDisabledAtom
+ * - 管理 dropdown.atom / terminalInput.disabled
  */
 
 import {
   quickCommandsAtom,
-  dropdownAtom,
-  inputValueAtom,
-  selectionAtom,
-  inputDisabledAtom,
+  dropdown,
+  terminalInput,
   type DropdownItem,
 } from '../../../../store/agentAtom.js';
 
@@ -43,26 +41,26 @@ export function showQuickCommands(query: string): void {
       description: cmd.description,
     }));
 
-  inputValueAtom.set(query);
-  dropdownAtom.set({
+  dropdown.inputValue.set(query);
+  dropdown.atom.set({
     visible: true,
     items,
     selectedIndex: 0,
     title: '',
     emptyMessage: 'no matching commands',
   });
-  inputDisabledAtom.set(true);
+  terminalInput.disabled.set(true);
 }
 
 /** TerminalInput 在 handleChange 中调用：当输入不再以 '/' 开头 */
 export function hideQuickCommands(): void {
-  const dropdown = dropdownAtom.get();
-  if (!dropdown.visible) return;
+  const state = dropdown.atom.get();
+  if (!state.visible) return;
 
-  dropdownAtom.set({ visible: false, items: [], selectedIndex: 0 });
-  selectionAtom.set(null);
-  inputValueAtom.set('');
-  inputDisabledAtom.set(false);
+  dropdown.atom.set({ visible: false, items: [], selectedIndex: 0 });
+  dropdown.selection.set(null);
+  dropdown.inputValue.set('');
+  terminalInput.disabled.set(false);
 }
 
 /**
@@ -77,8 +75,8 @@ export function handleDropdownKey(key: {
   return?: boolean;
   shift?: boolean;
 }): boolean {
-  const dropdown = dropdownAtom.get();
-  if (!dropdown.visible || dropdown.items.length === 0) return false;
+  const state = dropdown.atom.get();
+  if (!state.visible || state.items.length === 0) return false;
 
   if (key.escape) {
     closeAndClear();
@@ -111,44 +109,37 @@ export function handleDropdownKey(key: {
 // ── 内部辅助 ──────────────────────────────────────────
 
 function closeAndClear(): void {
-  dropdownAtom.set({ visible: false, items: [], selectedIndex: 0 });
-  selectionAtom.set(null);
-  inputValueAtom.set('');
-  inputDisabledAtom.set(false);
+  dropdown.atom.set({ visible: false, items: [], selectedIndex: 0 });
+  dropdown.selection.set(null);
+  dropdown.inputValue.set('');
+  terminalInput.disabled.set(false);
 }
 
 function executeSelected(): void {
-  const dropdown = dropdownAtom.get();
-  if (!dropdown.visible || dropdown.items.length === 0) return;
+  const state = dropdown.atom.get();
+  if (!state.visible || state.items.length === 0) return;
 
-  const idx = Math.min(dropdown.selectedIndex, dropdown.items.length - 1);
-  const selected = dropdown.items[idx];
+  const idx = Math.min(state.selectedIndex, state.items.length - 1);
+  const selected = state.items[idx];
   if (!selected) return;
 
-  // 尝试匹配快捷命令（主菜单场景）
   const commands = quickCommandsAtom.get();
   const cmd = commands.find((c) => c.name === selected.key);
 
   if (cmd) {
-    // 执行命令 action
     cmd.action();
 
-    // 如果命令打开了二级下拉菜单（如 /model, /session），不要关闭
-    const afterDropdown = dropdownAtom.get();
+    const afterDropdown = dropdown.atom.get();
     if (afterDropdown.visible && afterDropdown.items.length > 0) {
-      // 二级菜单：保持 inputDisabledAtom=true，清空搜索值
-      inputValueAtom.set('');
+      dropdown.inputValue.set('');
       return;
     }
 
-    // 单次命令（如 /clear），关闭所有
     closeAndClear();
     return;
   }
 
-  // 不是快捷命令 → 二级菜单选中（如 model/election 列表项）
-  // 通过 selectionAtom + emitter 通知插件
-  selectionAtom.set(selected);
+  dropdown.selection.set(selected);
   if (_emitSelect) {
     _emitSelect(selected);
   }
@@ -156,18 +147,18 @@ function executeSelected(): void {
 }
 
 function navigateDropdown(direction: 1 | -1): void {
-  const dropdown = dropdownAtom.get();
-  if (!dropdown.visible || dropdown.items.length === 0) return;
+  const state = dropdown.atom.get();
+  if (!state.visible || state.items.length === 0) return;
 
-  const len = dropdown.items.length;
+  const len = state.items.length;
   const newIndex =
     direction === -1
-      ? dropdown.selectedIndex > 0
-        ? dropdown.selectedIndex - 1
+      ? state.selectedIndex > 0
+        ? state.selectedIndex - 1
         : len - 1
-      : dropdown.selectedIndex < len - 1
-        ? dropdown.selectedIndex + 1
+      : state.selectedIndex < len - 1
+        ? state.selectedIndex + 1
         : 0;
 
-  dropdownAtom.set({ ...dropdown, selectedIndex: newIndex });
+  dropdown.atom.set({ ...state, selectedIndex: newIndex });
 }

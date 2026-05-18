@@ -3,13 +3,8 @@ import { ui } from '../components/ui';
 import { handleToolUseState, handleStreamText, handleThinking } from './handleUIFlush';
 import {
   messagesAtom,
-  modelAtom,
-  effortAtom,
-  modelOptionsAtom,
-  effortOptionsAtom,
-  sessionsIndexAtom,
-  currentSessionIdAtom,
-  sessionSwitchAtom,
+  model,
+  session,
   workingStatusAtom,
 } from '../store/agentAtom.js';
 import { MicaPlugin } from '../plugins/MicaPlugin';
@@ -65,13 +60,13 @@ export const MicaAgent = {
     plugin.agent = MicaAgent;
     plugin.atoms = {
       messages: messagesAtom,
-      model: modelAtom,
-      effort: effortAtom,
-      modelOptions: modelOptionsAtom,
-      effortOptions: effortOptionsAtom,
-      sessionsIndex: sessionsIndexAtom,
-      currentSessionId: currentSessionIdAtom,
-      sessionSwitch: sessionSwitchAtom,
+      model: model.atom,
+      effort: model.effort,
+      modelOptions: model.options,
+      effortOptions: model.effortOptions,
+      sessionsIndex: session.index,
+      currentSessionId: session.currentId,
+      sessionSwitch: session.switch,
     };
     await plugin.onInstall();
     _installedPlugins.push(plugin);

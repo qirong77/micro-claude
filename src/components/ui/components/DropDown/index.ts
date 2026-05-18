@@ -1,7 +1,7 @@
 import mitt from 'mitt';
 import type { DropdownItem } from './CommandDropdown.js';
 import { DropDownSelect } from './DropDownSelect.js';
-import { dropdownAtom, selectionAtom } from '../../../../store/agentAtom.js';
+import { dropdown } from '../../../../store/agentAtom.js';
 import {
   showQuickCommands,
   hideQuickCommands,
@@ -29,8 +29,8 @@ export const DropDownUI = {
   renderFn: DropDownSelect,
   emitter,
   atomData: {
-    dropdown: dropdownAtom,
-    selection: selectionAtom,
+    dropdown: dropdown.atom,
+    selection: dropdown.selection,
   },
   /** 快捷命令下拉菜单逻辑（由 TerminalInput 调用） */
   quickCommand: {

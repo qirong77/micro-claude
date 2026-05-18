@@ -1,12 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { apiKeyAtom, baseUrlAtom } from "../../store/agentAtom";
+import { api } from "../../store/agentAtom";
 
 let _client: Anthropic | null = null;
 
 export function getClient(): Anthropic {
   if (_client) return _client;
 
-  const apiKey = apiKeyAtom.get();
+  const apiKey = api.apiKey.get();
   if (!apiKey) {
     console.error('缺少环境变量 ANTHROPIC_API_KEY');
     process.exit(1);
@@ -14,7 +14,7 @@ export function getClient(): Anthropic {
 
   _client = new Anthropic({
     apiKey,
-    baseURL: baseUrlAtom.get(),
+    baseURL: api.baseUrl.get(),
   });
   return _client;
 }

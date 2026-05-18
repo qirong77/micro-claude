@@ -6,8 +6,7 @@ import { C } from "../../data";
 import mitt from 'mitt'
 import { useSchedulState } from '../../hooks';
 import {
-  terminalInputTextAtom,
-  inputDisabledAtom,
+  terminalInput,
 } from '../../../../store/agentAtom.js';
 import { DropDownUI } from '../DropDown/index.js';
 
@@ -17,7 +16,7 @@ type Events = {
 const emitter = mitt<Events>()
 
 function TerminalInput() {
-  const [input, setInput] = useState(terminalInputTextAtom.get());
+  const [input, setInput] = useState(terminalInput.text.get());
   const [cursorOffset, setCursorOffset] = useState(0);
   const [prevInputs, setPrevInputs] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -38,7 +37,7 @@ function TerminalInput() {
 
       // 下拉菜单可见时的 Enter/Tab/Escape 由 useInput → handleDropdownKey 处理，
       // 但 SimpleTextInput 也会触发 onSubmit，这里需要防御
-      if (inputDisabledAtom.get()) return;
+      if (terminalInput.disabled.get()) return;
 
       const trimmed = value.trim();
       setPrevInputs(prev => [...prev, trimmed]);
@@ -68,7 +67,7 @@ function TerminalInput() {
 
   const onHistoryUp = useCallback(() => {
     // 下拉菜单可见时，↑↓ 由 useInput → handleDropdownKey 处理
-    if (inputDisabledAtom.get()) return;
+    if (terminalInput.disabled.get()) return;
     if (prevInputs.length === 0) return;
     const newIndex = historyIndex < prevInputs.length - 1 ? historyIndex + 1 : historyIndex;
     if (newIndex !== historyIndex) {
@@ -81,7 +80,7 @@ function TerminalInput() {
 
   const onHistoryDown = useCallback(() => {
     // 下拉菜单可见时，↑↓ 由 useInput → handleDropdownKey 处理
-    if (inputDisabledAtom.get()) return;
+    if (terminalInput.disabled.get()) return;
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
@@ -95,8 +94,8 @@ function TerminalInput() {
     }
   }, [historyIndex, prevInputs]);
 
-  // 读取 inputDisabledAtom：下拉菜单可见时禁用光标，并阻止历史/提交回调
-  const inputDisabled = useSchedulState(inputDisabledAtom);
+  // 读取 terminalInput.disabled：下拉菜单可见时禁用光标，并阻止历史/提交回调
+  const inputDisabled = useSchedulState(terminalInput.disabled);
 
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -138,5 +137,5 @@ function TerminalInput() {
 export const TerminalInputUI = {
   renderFn:TerminalInput,
   emitter,
-  atomText: terminalInputTextAtom,
+  atomText: terminalInput.text,
 }

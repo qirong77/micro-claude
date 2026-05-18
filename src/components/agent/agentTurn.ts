@@ -4,9 +4,7 @@ import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
 import {
   messagesAtom,
-  modelAtom,
-  maxTokensAtom,
-  effortAtom,
+  model,
   EFFORT_TOKENS,
   workingStatusAtom,
 } from '../../store/agentAtom.js';
@@ -51,14 +49,14 @@ class AgentTurn {
 
   async executeSingleIteration(): Promise<IterationResult> {
     const messages = messagesAtom.get();
-    const model = modelAtom.get();
-    const effort = effortAtom.get();
+    const modelName = model.atom.get();
+    const effort = model.effort.get();
     // 通过 UI 组件设置状态
     ui.WorkingStatus.atomData.set({ type: 'connecting' });
     ui.MessageBar.emitter.emit('clear');
     const stream = getClient().messages.stream({
-      model,
-      max_tokens: maxTokensAtom.get(),
+      model: modelName,
+      max_tokens: model.maxTokens.get(),
       system: systemPrompt,
       messages,
       thinking: effort === 'none'

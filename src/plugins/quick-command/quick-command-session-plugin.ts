@@ -3,9 +3,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { MicaPlugin } from '../MicaPlugin';
 import {
-  sessionsIndexAtom,
-  currentSessionIdAtom,
-  sessionSwitchAtom,
+  session,
   type SessionMeta,
 } from '../../store/agentAtom.js';
 

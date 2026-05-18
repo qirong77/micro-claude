@@ -3,12 +3,12 @@ import React, { useMemo } from 'react';
 import { useSchedulState } from '../../hooks';
 import { CommandDropdown } from './CommandDropdown';
 import { DropDownUI } from './index.js';
-import { inputValueAtom } from '../../../../store/agentAtom.js';
+import { dropdown as dropdownAtoms } from '../../../../store/agentAtom.js';
 
 
 export function DropDownSelect() {
   const dropdown = useSchedulState(DropDownUI.atomData.dropdown);
-  const inputValue = useSchedulState(inputValueAtom);
+  const inputValue = useSchedulState(dropdownAtoms.inputValue);
 
   const filteredItems = useMemo(() => {
     if (!dropdown.visible) return dropdown.items;
