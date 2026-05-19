@@ -38,7 +38,6 @@ export const Conversation = (): React.ReactNode => {
       return [{ id: i, role: msg.role, text }];
     }
     if (msg.role === 'assistant') {
-      const extractedMarkdown = text
       return [{ id: i, role: 'assistant', text }];
     }
     return [];
