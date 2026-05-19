@@ -6,7 +6,6 @@
     "dev": "bun run src/index.ts",
     "ui": "bun run src/components/ui/examples/ui.tsx",
     "build": "bun scripts/build.mjs",
-    "postbuild": "npm i -g",
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
