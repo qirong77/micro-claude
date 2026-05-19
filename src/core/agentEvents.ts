@@ -43,8 +43,8 @@ export function setupAgentEvents() {
         toolCallsAtom.set([]);
         logTextAtom.set('');
         clearLogBuffers();
-        workingStatusAtom.set({ type: 'idle' });
       }
+      workingStatusAtom.set({ type: 'streaming' });
       streamingText += chunk;
 
       const messages = messagesAtom.get() as StreamingMessage[];
@@ -100,6 +100,10 @@ export function setupAgentEvents() {
         ...existing,
         { id: toolUseId, toolName, toolInput, completed, displayText },
       ]);
+    }
+
+    if (!completed) {
+      workingStatusAtom.set({ type: 'calling_tool' });
     }
   });
 

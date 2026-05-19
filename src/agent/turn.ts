@@ -151,7 +151,9 @@ class AgentTurn {
       contextSizeAtom.set(estimateContextSize(withToolResults));
     }
 
-    this.events.emit('status', { type: 'idle' });
+    if (!hasToolUse) {
+      this.events.emit('status', { type: 'idle' });
+    }
     return { hasToolUse, finalMessage };
   }
 

@@ -4,6 +4,7 @@ export type WorkingStatus =
   | { type: 'idle' }
   | { type: 'connecting' }
   | { type: 'thinking' }
+  | { type: 'streaming' }
   | { type: 'calling_tool'; elapsedMs?: number }
   | { type: 'completed'; elapsedMs?: number }
   | { type: 'error'; message?: string };

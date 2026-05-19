@@ -7,6 +7,7 @@ export function bootstrap() {
     const startTime = Date.now();
 
     try {
+      agentTurn.events.emit('status', { type: 'connecting' });
       await agentTurn.run(text);
       agentTurn.events.emit('status', { type: 'completed', elapsedMs: Date.now() - startTime });
     } catch (error) {

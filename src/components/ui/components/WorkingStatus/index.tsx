@@ -30,22 +30,29 @@ export function WorkingStatus() {
   const contextSize = useSchedulState(contextSizeAtom);
   const dropdownItems = useSchedulState(dropdown.atom);
 
-  if (dropdownItems.items.length > 0) return null;
+  const hideLeftStatus = dropdownItems.visible && dropdownItems.items.length > 0;
 
   const content = (() => {
     switch (info.type) {
       case 'connecting':
       case 'thinking':
-        return <Box>
+      case 'streaming':
+        return (
+          <Box>
             <Spin />
             <Text>{info.type}</Text>
-        </Box>;
+          </Box>
+        );
       case 'calling_tool':
-        return <Box>
+        return (
+          <Box>
             <Spin />
             <Text>{info.type}</Text>
-            {info.elapsedMs != null && <Text color={C.dim}> ({formatElapsed(info.elapsedMs)})</Text>}
-        </Box>;
+            {info.elapsedMs != null && (
+              <Text color={C.dim}> ({formatElapsed(info.elapsedMs)})</Text>
+            )}
+          </Box>
+        );
       case 'error':
         return <Text color={C.error}>✗ {info.message}</Text>;
       case 'completed':
@@ -63,7 +70,7 @@ export function WorkingStatus() {
   return (
     <Box flexDirection="row">
       <Box flexGrow={1} flexShrink={1}>
-        {content}
+        {hideLeftStatus ? null : content}
       </Box>
       <Box flexShrink={0} paddingRight={4}>
         <Text color={C.dim} wrap="wrap">
