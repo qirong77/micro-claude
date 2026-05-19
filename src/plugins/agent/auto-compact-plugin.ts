@@ -29,8 +29,8 @@ function compactMessages(messages: Anthropic.MessageParam[]): Anthropic.MessageP
     return messages.map(truncateToolResults);
   }
 
-  const keepSet = new Set(
-    toolResults.slice(-TOOL_RESULT_KEEP_COUNT).map((tr) => `${tr.msgIdx}:${tr.blockIdx}`)
+  const replaceSet = new Set(
+    toolResults.slice(0, -TOOL_RESULT_KEEP_COUNT).map((tr) => `${tr.msgIdx}:${tr.blockIdx}`)
   );
 
   return messages.map((msg, msgIdx) => {
@@ -38,20 +38,13 @@ function compactMessages(messages: Anthropic.MessageParam[]): Anthropic.MessageP
       return msg;
     }
 
-    const newContent = msg.content
-      .map((block, blockIdx) => {
-        if (block.type !== 'tool_result') return block;
-        if (!keepSet.has(`${msgIdx}:${blockIdx}`)) return null;
+    const newContent = msg.content.map((block, blockIdx) => {
+      if (block.type !== 'tool_result') return block;
+      if (!replaceSet.has(`${msgIdx}:${blockIdx}`)) {
         return applyLengthTruncation(block);
-      })
-      .filter((block): block is Anthropic.ContentBlockParam => block !== null);
-
-    if (newContent.length === 0) {
-      return {
-        ...msg,
-        content: [{ type: 'text', text: '[较早的工具结果已省略]' }],
-      };
-    }
+      }
+      return { ...block, content: '[工具结果已压缩]' };
+    });
 
     return { ...msg, content: newContent };
   });

@@ -22,9 +22,6 @@ ui.TerminalInput.emitter.on('submit', async (text) => {
       ui.MessageBar.emitter.emit('clear');
       ui.LogList.atomData.set('');
     });
-    workingStatusAtom.set({
-      type:'completed'
-    });
     ui.WorkingStatus.atomData.set({ type: 'completed', elapsedMs: Date.now() - startTime });
   } catch (error) {
     workingStatusAtom.set({
