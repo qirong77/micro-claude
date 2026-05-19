@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'fs/promises';
-import { MicaTool } from './MicaTool';
+import { MicaTool, ToolExecuteCallbacks } from './MicaTool';
 
 export class ToolEditFile extends MicaTool {
   constructor() {
@@ -18,7 +18,7 @@ export class ToolEditFile extends MicaTool {
     file_path: string;
     old_string: string;
     new_string: string;
-  }): Promise<string> {
+  }, _callbacks?: ToolExecuteCallbacks): Promise<string> {
     const content = await readFile(input.file_path, 'utf-8');
     if (!content.includes(input.old_string)) return `未找到匹配文本`;
     const newContent = content.replace(input.old_string, input.new_string);

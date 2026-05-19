@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { MicaTool } from './MicaTool';
+import { MicaTool, ToolExecuteCallbacks } from './MicaTool';
 
 export class ToolGrepSearch extends MicaTool {
   constructor() {
@@ -14,7 +14,7 @@ export class ToolGrepSearch extends MicaTool {
     });
   }
 
-  async execute(input: { pattern: string; path?: string; include?: string }): Promise<string> {
+  async execute(input: { pattern: string; path?: string; include?: string }, _callbacks?: ToolExecuteCallbacks): Promise<string> {
     const args = ['--line-number', '--color=never', '-r'];
     if (input.include) args.push(`--include=${input.include}`);
     args.push(input.pattern);

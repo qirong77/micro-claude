@@ -20,7 +20,7 @@ export function handleToolUseState() {
     
     if (idx !== -1) {
       const updated = [...existing];
-      updated[idx] = { ...updated[idx], completed, displayText };
+      updated[idx] = { ...updated[idx], completed, displayText, status: completed ? undefined : updated[idx].status };
       toolCallsAtom.set(updated);
     } else {
       toolCallsAtom.set([

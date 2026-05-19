@@ -32,7 +32,7 @@ export type WorkingStatus =
   | { type: 'idle' }
   | { type: 'connecting' }
   | { type: 'thinking' }
-  | { type: 'calling_tool' }
+  | { type: 'calling_tool'; elapsedMs?: number }
   | { type: 'completed'; elapsedMs?: number }
   | { type: 'error'; message?: string };
 
@@ -57,6 +57,7 @@ export interface ToolCallData {
   toolInput: Record<string, any>;
   completed: boolean;
   displayText: string;
+  status?: 'executing' | 'error';
 }
 
 export interface SessionMeta {
@@ -90,7 +91,7 @@ export const model = {
   maxTokens: atom(Number(process.env.ANTHROPIC_MAX_TOKENS) || 8192),
   effort: createPersistedAtom('effort', 'low' as EffortLevel),
   options: atom<ModelOption[]>([
-    { name: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+    // { name: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
     { name: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
   ]),
   effortOptions: atom<EffortOption[]>([

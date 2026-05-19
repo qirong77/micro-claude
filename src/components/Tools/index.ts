@@ -8,6 +8,7 @@ import { ToolGrepSearch } from './ToolGrepSearch';
 
 import { MicaTool } from './MicaTool';
 import { ToolRunShell } from './ToolRunShell';
+import type { ToolExecuteCallbacks } from './MicaTool';
 
 const tools: MicaTool[] = [
   new ToolReadFile(),
@@ -24,12 +25,12 @@ export const toolDefinitions: Anthropic.Tool[] = tools.map((t) => ({
   input_schema: t.input_schema,
 }));
 
-export async function executeTool(name: string, input: Record<string, any>): Promise<string> {
+export async function executeTool(name: string, input: Record<string, any>, callbacks?: ToolExecuteCallbacks): Promise<string> {
   const tool = tools.find((t) => t.name === name);
   if (!tool) return `未知工具: ${name}`;
 
   try {
-    return await tool.execute(input);
+    return await tool.execute(input, callbacks);
   } catch (error) {
     const message =
       error instanceof Error

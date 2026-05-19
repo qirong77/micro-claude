@@ -1,3 +1,7 @@
+export interface ToolExecuteCallbacks {
+  onChunk?: (chunk: string) => void;
+}
+
 export abstract class MicaTool {
   name: string;
   description: string;
@@ -9,6 +13,6 @@ export abstract class MicaTool {
     this.input_schema = input_schema;
   }
 
-  abstract execute(input: Record<string, any>): Promise<string>;
+  abstract execute(input: Record<string, any>, callbacks?: ToolExecuteCallbacks): Promise<string>;
   abstract onToolUseDisplayText(input: Record<string, any>): string;
 }

@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { MicaTool } from './MicaTool';
+import { MicaTool, ToolExecuteCallbacks } from './MicaTool';
 
 export class ToolReadFile extends MicaTool {
   constructor() {
@@ -12,7 +12,7 @@ export class ToolReadFile extends MicaTool {
     });
   }
 
-  async execute(input: { file_path: string }): Promise<string> {
+  async execute(input: { file_path: string }, _callbacks?: ToolExecuteCallbacks): Promise<string> {
     const content = readFileSync(input.file_path, 'utf-8');
     return content
       .split('\n')

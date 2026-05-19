@@ -2,7 +2,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, model, EFFORT_TOKENS, workingStatusAtom } from '../../store/agentAtom.js';
+import { messagesAtom, model, EFFORT_TOKENS, workingStatusAtom, logTextAtom, toolCallsAtom } from '../../store/agentAtom.js';
 import { ui } from '../ui/index.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
@@ -91,21 +91,46 @@ class AgentTurn {
     messagesAtom.set([...messages, finalMessage]);
     // 执行工具并收集结果
     if (completedToolUses.length > 0) {
+      const currentCalls = toolCallsAtom.get();
+      for (const tool of completedToolUses) {
+        const idx = currentCalls.findIndex(t => t.id === tool.id);
+        if (idx !== -1) {
+          currentCalls[idx] = { ...currentCalls[idx], status: 'executing' };
+        }
+      }
+      toolCallsAtom.set([...currentCalls]);
+
+      const toolStartTime = Date.now();
+      const timer = setInterval(() => {
+        const elapsed = Date.now() - toolStartTime;
+        workingStatusAtom.set({ type: 'calling_tool', elapsedMs: elapsed });
+      }, 200);
+
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       const settled = await Promise.allSettled(
-        completedToolUses.map((tool) => executeTool(tool.name, tool.input)),
+        completedToolUses.map(async (tool) => {
+          const result = await executeTool(tool.name, tool.input, {
+            onChunk: (chunk) => {
+              const current = logTextAtom.get();
+              logTextAtom.set(current + chunk);
+            },
+          });
+          return { tool, result };
+        }),
       );
 
-      for (let i = 0; i < completedToolUses.length; i++) {
+      clearInterval(timer);
+
+      for (let i = 0; i < settled.length; i++) {
+        const item = settled[i];
         const tool = completedToolUses[i];
-        const r = settled[i];
         const result =
-          r.status === 'fulfilled'
-            ? r.value
+          item.status === 'fulfilled'
+            ? item.value.result
             : `工具 ${tool.name} 执行异常：\n${
-                r.reason instanceof Error
-                  ? `${r.reason.name}: ${r.reason.message}`
-                  : String(r.reason)
+                item.reason instanceof Error
+                  ? `${item.reason.name}: ${item.reason.message}`
+                  : String(item.reason)
               }`;
         toolResults.push({ type: 'tool_result', tool_use_id: tool.id, content: result });
         this.events.emit('tool:use', {
@@ -115,11 +140,16 @@ class AgentTurn {
           completed: true,
         });
 
-        // 如果工具执行失败，标记为错误状态
-        if (r.status === 'rejected') {
+        if (item.status === 'rejected') {
+          const calls = toolCallsAtom.get();
+          const idx = calls.findIndex(t => t.id === tool.id);
+          if (idx !== -1) {
+            calls[idx] = { ...calls[idx], status: 'error' };
+            toolCallsAtom.set([...calls]);
+          }
           workingStatusAtom.set({
             type: 'error',
-            message: r.reason instanceof Error ? r.reason.message : String(r.reason),
+            message: item.reason instanceof Error ? item.reason.message : String(item.reason),
           });
         }
       }

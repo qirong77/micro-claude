@@ -1,5 +1,5 @@
-import { exec } from 'child_process';
-import { MicaTool } from './MicaTool';
+import { spawn } from 'child_process';
+import { MicaTool, ToolExecuteCallbacks } from './MicaTool';
 
 export class ToolRunShell extends MicaTool {
   constructor() {
@@ -13,21 +13,44 @@ export class ToolRunShell extends MicaTool {
     });
   }
 
-  async execute(input: { command: string; timeout?: number }): Promise<string> {
+  async execute(input: { command: string; timeout?: number }, callbacks?: ToolExecuteCallbacks): Promise<string> {
+    const timeout = input.timeout || 30000;
+
     return new Promise((resolve) => {
-      exec(input.command, {
-        encoding: 'utf-8',
-        maxBuffer: 5 * 1024 * 1024,
-        timeout: input.timeout || 30000,
-      }, (error, stdout, stderr) => {
-        let output = stdout || '';
-        if (stderr) output += (output ? '\n' : '') + stderr;
+      const child = spawn(input.command, {
+        shell: true,
+        timeout,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let output = '';
+
+      child.stdout.on('data', (data: Buffer) => {
+        const chunk = data.toString();
+        output += chunk;
+        callbacks?.onChunk?.(chunk);
+      });
+
+      child.stderr.on('data', (data: Buffer) => {
+        const chunk = data.toString();
+        output += chunk;
+        callbacks?.onChunk?.(chunk);
+      });
+
+      child.on('close', (code) => {
         const msg = output || '(no output)';
-        if (error) {
-          const reason = error.killed ? '超时或被终止' : `退出码: ${error.code ?? 'unknown'}`;
-          resolve(`(${reason})\n${msg}`);
+        if (code !== 0 && code !== null) {
+          resolve(`(退出码: ${code})\n${msg}`);
         } else {
           resolve(msg);
+        }
+      });
+
+      child.on('error', (error) => {
+        if (output) {
+          resolve(`(错误: ${error.message})\n${output}`);
+        } else {
+          resolve(`(错误: ${error.message})`);
         }
       });
     });

@@ -33,10 +33,15 @@ export function WorkingStatus() {
     switch (info.type) {
       case 'connecting':
       case 'thinking':
+        return <Box>
+            <Spin />
+            <Text>{info.type}</Text>
+        </Box>;
       case 'calling_tool':
         return <Box>
             <Spin />
             <Text>{info.type}</Text>
+            {info.elapsedMs != null && <Text color={C.dim}> ({formatElapsed(info.elapsedMs)})</Text>}
         </Box>;
       case 'error':
         return <Text color={C.error}>✗ {info.message}</Text>;

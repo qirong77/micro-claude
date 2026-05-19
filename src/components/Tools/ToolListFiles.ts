@@ -1,5 +1,5 @@
 import { glob } from 'glob';
-import { MicaTool } from './MicaTool';
+import { MicaTool, ToolExecuteCallbacks } from './MicaTool';
 
 export class ToolListFiles extends MicaTool {
   constructor() {
@@ -13,7 +13,7 @@ export class ToolListFiles extends MicaTool {
     });
   }
 
-  async execute(input: { pattern: string; path?: string }): Promise<string> {
+  async execute(input: { pattern: string; path?: string }, _callbacks?: ToolExecuteCallbacks): Promise<string> {
     const files = await glob(input.pattern, {
       cwd: input.path || process.cwd(),
       nodir: true,
