@@ -132,7 +132,9 @@ class AgentTurn {
         },
       ]);
     }
-
+    workingStatusAtom.set({
+      type:'idle'
+    })
     return { hasToolUse, finalMessage };
   }
   private async _coreRun(userInput: string, onIteration?: (result: IterationResult) => void) {
