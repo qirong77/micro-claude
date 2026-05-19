@@ -9,6 +9,9 @@ export function handleToolUseState() {
   agentTurn.events.on('stream:create', (stream) => {
     stream.on('text', () => {
       toolCallsAtom.set([]);
+      ui.WorkingStatus.atomData.set({
+        type: 'idle',
+      });
       ui.LogList.atomData.set('');
     });
   });
@@ -17,10 +20,15 @@ export function handleToolUseState() {
     const displayText = getToolDisplayText(toolName, toolInput);
     const existing = toolCallsAtom.get();
     const idx = existing.findIndex((t) => t.id === toolUseId);
-    
+
     if (idx !== -1) {
       const updated = [...existing];
-      updated[idx] = { ...updated[idx], completed, displayText, status: completed ? undefined : updated[idx].status };
+      updated[idx] = {
+        ...updated[idx],
+        completed,
+        displayText,
+        status: completed ? undefined : updated[idx].status,
+      };
       toolCallsAtom.set(updated);
     } else {
       toolCallsAtom.set([
