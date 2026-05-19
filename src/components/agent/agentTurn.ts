@@ -1,14 +1,11 @@
-#!/usr/bin/env node
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, model, EFFORT_TOKENS, workingStatusAtom, logTextAtom, toolCallsAtom } from '../../store/agentAtom.js';
-import { ui } from '../ui/index.js';
+import { messagesAtom, model, EFFORT_TOKENS } from '../../store/agentAtom.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 import mitt from 'mitt';
-
-// ── Event types ────────────────────────────────────────
+import type { WorkingStatus } from '../../store/agentAtom.js';
 
 export type AgentTurnEvents = {
   'stream:create': MessageStream<null>;
@@ -18,9 +15,9 @@ export type AgentTurnEvents = {
     toolInput: Record<string, any>;
     completed: boolean;
   };
+  status: WorkingStatus;
+  'log:chunk': { toolUseId: string; chunk: string };
 };
-
-// ── Public types ───────────────────────────────────────
 
 export interface IterationResult {
   hasToolUse: boolean;
@@ -38,7 +35,6 @@ export type Middleware = (
 ) => Promise<void>;
 
 class AgentTurn {
-  /** mitt 事件发射器，替代之前的回调数组 */
   readonly events = mitt<AgentTurnEvents>();
 
   private middlewares: Middleware[] = [];
@@ -51,9 +47,9 @@ class AgentTurn {
     const messages = messagesAtom.get();
     const modelName = model.atom.get();
     const effort = model.effort.get();
-    // 通过 UI 组件设置状态
-    ui.WorkingStatus.atomData.set({ type: 'connecting' });
-    ui.MessageBar.emitter.emit('clear');
+
+    this.events.emit('status', { type: 'connecting' });
+
     const stream = getClient().messages.stream({
       model: modelName,
       max_tokens: model.maxTokens.get(),
@@ -66,7 +62,9 @@ class AgentTurn {
       output_config: effort !== 'none' ? { effort } : undefined,
       tools: toolDefinitions,
     }) as MessageStream<null>;
+
     this.events.emit('stream:create', stream);
+
     let hasToolUse = false;
     const completedToolUses: Array<{ id: string; name: string; input: Record<string, any> }> = [];
     stream.on('contentBlock', (content) => {
@@ -86,24 +84,19 @@ class AgentTurn {
         });
       }
     });
-    // 等待流结束，获取完整消息
+
     const finalMessage = await stream.finalMessage();
     messagesAtom.set([...messages, finalMessage]);
-    // 执行工具并收集结果
-    if (completedToolUses.length > 0) {
-      const currentCalls = toolCallsAtom.get();
-      for (const tool of completedToolUses) {
-        const idx = currentCalls.findIndex(t => t.id === tool.id);
-        if (idx !== -1) {
-          currentCalls[idx] = { ...currentCalls[idx], status: 'executing' };
-        }
-      }
-      toolCallsAtom.set([...currentCalls]);
 
+    if (completedToolUses.length > 0) {
       const toolStartTime = Date.now();
+      this.events.emit('status', { type: 'calling_tool' });
+
       const timer = setInterval(() => {
-        const elapsed = Date.now() - toolStartTime;
-        workingStatusAtom.set({ type: 'calling_tool', elapsedMs: elapsed });
+        this.events.emit('status', {
+          type: 'calling_tool',
+          elapsedMs: Date.now() - toolStartTime,
+        });
       }, 200);
 
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
@@ -111,8 +104,7 @@ class AgentTurn {
         completedToolUses.map(async (tool) => {
           const result = await executeTool(tool.name, tool.input, {
             onChunk: (chunk) => {
-              const current = logTextAtom.get();
-              logTextAtom.set(current + chunk);
+              this.events.emit('log:chunk', { toolUseId: tool.id, chunk });
             },
           });
           return { tool, result };
@@ -133,6 +125,7 @@ class AgentTurn {
                   : String(item.reason)
               }`;
         toolResults.push({ type: 'tool_result', tool_use_id: tool.id, content: result });
+
         this.events.emit('tool:use', {
           toolUseId: tool.id,
           toolName: tool.name,
@@ -141,13 +134,7 @@ class AgentTurn {
         });
 
         if (item.status === 'rejected') {
-          const calls = toolCallsAtom.get();
-          const idx = calls.findIndex(t => t.id === tool.id);
-          if (idx !== -1) {
-            calls[idx] = { ...calls[idx], status: 'error' };
-            toolCallsAtom.set([...calls]);
-          }
-          workingStatusAtom.set({
+          this.events.emit('status', {
             type: 'error',
             message: item.reason instanceof Error ? item.reason.message : String(item.reason),
           });
@@ -156,17 +143,14 @@ class AgentTurn {
 
       messagesAtom.set([
         ...messagesAtom.get(),
-        {
-          role: 'user',
-          content: toolResults,
-        },
+        { role: 'user', content: toolResults },
       ]);
     }
-    workingStatusAtom.set({
-      type:'idle'
-    })
+
+    this.events.emit('status', { type: 'idle' });
     return { hasToolUse, finalMessage };
   }
+
   private async _coreRun(userInput: string, onIteration?: (result: IterationResult) => void) {
     messagesAtom.set([...messagesAtom.get(), { role: 'user', content: userInput }]);
     while (true) {
