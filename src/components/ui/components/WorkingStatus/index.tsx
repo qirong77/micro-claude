@@ -1,9 +1,10 @@
 import { Box, Text } from '@anthropic/ink';
 import React from 'react';
 import { useSchedulState } from '../../hooks/index.js';
-import { model, workingStatusAtom } from '../../../../store/agentAtom.js';
+import { dropdown, model, workingStatusAtom } from '../../../../store/agentAtom.js';
 import { C } from '../../data.js';
 import { Spin } from '../common/Spin.js';
+import { DropDownUI } from '../DropDown/index.js';
 
 // ── Types (re-exported from agentAtom for convenience) ─
 
@@ -24,6 +25,9 @@ export function WorkingStatus() {
   const info = useSchedulState(workingStatusAtom);
   const modelValue = useSchedulState(model.atom);
   const effort = useSchedulState(model.effort);
+  const dropdownItems = useSchedulState(dropdown.atom);
+
+  if (dropdownItems.items.length > 0) return null;
 
   const content = (() => {
     switch (info.type) {

@@ -29,7 +29,7 @@ export function CommandDropdown({
   }
 
   return (
-    <Box flexDirection="column" paddingX={1} paddingY={1}>
+    <Box flexDirection="column" >
       {title && (
         <Box paddingBottom={1}>
           <Text dimColor>{title}</Text>
@@ -39,19 +39,15 @@ export function CommandDropdown({
         const isSelected = i === selectedIndex;
         return (
           <Box key={item.key}>
-            <Text color={isSelected ? C.primary : undefined}>
-              {isSelected ? '▸' : ' '}
-            </Text>
-            <Text bold color={isSelected ? C.primary : undefined}>
-              {' '}
-              {item.label}
-            </Text>
-            {item.description && (
-              <Text dimColor> — {item.description}</Text>
-            )}
-            {item.suffix && (
-              <Text color={(item.suffix.color ?? C.success) as Color}> {item.suffix.text}</Text>
-            )}
+            <Box width={20}>
+              <Text color={isSelected ? 'claude' : 'inactive'}>{item.label}</Text>
+            </Box>
+            <Box>
+              {item.description && <Text  color={isSelected ? 'claude' : 'inactive'}> {item.description}</Text>}
+              {item.suffix && (
+                <Text color={(item.suffix.color ?? C.success) as Color}> {item.suffix.text}</Text>
+              )}
+            </Box>
           </Box>
         );
       })}
