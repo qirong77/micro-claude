@@ -1,12 +1,14 @@
 import { Box, Text } from '@anthropic/ink';
 import React from 'react';
 import { useSchedulState } from '../../hooks/index.js';
-import { contextSizeAtom, dropdown, model, workingStatusAtom } from '../../../../store/agentAtom.js';
+import { contextSizeAtom } from '../../../../store/conversation.js';
+import { dropdown, workingStatusAtom } from '../../../../store/ui-state.js';
+import { model } from '../../../../store/config.js';
 import { C } from '../../data.js';
 import { Spin } from '../common/Spin.js';
 import { DropDownUI } from '../DropDown/index.js';
 
-// ── Types (re-exported from agentAtom for convenience) ─
+// ── Types ─────────────────────────────────────────────
 
 
 

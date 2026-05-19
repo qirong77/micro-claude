@@ -5,9 +5,7 @@ import { SimpleTextInput } from "./Input";
 import { C } from "../../data";
 import mitt from 'mitt'
 import { useSchedulState } from '../../hooks';
-import {
-  terminalInput,
-} from '../../../../store/agentAtom.js';
+import { terminalInput } from '../../../../store/ui-state.js';
 import { DropDownUI } from '../DropDown/index.js';
 
 type Events = {

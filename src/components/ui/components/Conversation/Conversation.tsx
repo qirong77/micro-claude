@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Text } from '@anthropic/ink';
 import type Anthropic from '@anthropic-ai/sdk';
 import { C } from '../../data.js';
-import { messagesAtom } from '../../../../store/agentAtom.js';
+import { messagesAtom } from '../../../../store/conversation.js';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
 import { Markdown } from './Markdown.js';
 

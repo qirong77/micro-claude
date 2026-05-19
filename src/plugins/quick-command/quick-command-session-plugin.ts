@@ -2,10 +2,7 @@ import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { MicaPlugin } from '../MicaPlugin';
-import {
-  session,
-  type SessionMeta,
-} from '../../store/agentAtom.js';
+import { session, type SessionMeta } from '../../store/ui-state.js';
 
 // Re-export for backward compatibility
 export type { SessionMeta };

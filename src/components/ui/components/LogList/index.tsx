@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from '@anthropic/ink';
 import { useSchedulState } from '../../hooks/useSchedulState.js';
-import { logTextAtom, toolCallsAtom } from '../../../../store/agentAtom.js';
+import { logTextAtom, toolCallsAtom } from '../../../../store/ui-state.js';
 
 const MAX_LINES = 8;
 const MAX_TOOL_CALLS = 3;

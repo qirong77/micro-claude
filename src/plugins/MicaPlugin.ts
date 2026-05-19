@@ -2,11 +2,7 @@ import { type ReadableAtom, type WritableAtom } from 'nanostores';
 import type { IMicaAgent } from '../core/agent';
 import type Anthropic from '@anthropic-ai/sdk';
 import { uuid } from '../utils/uuid';
-import {
-  quickCommandsAtom,
-  type Command,
-  type SessionMeta,
-} from '../store/agentAtom.js';
+import { quickCommandsAtom, type Command, type SessionMeta } from '../store/ui-state.js';
 
 // ── 插件可用的 atom 依赖类型 ───────────────────────────
 

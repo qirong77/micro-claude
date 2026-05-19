@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { useSchedulState } from '../../hooks';
 import { CommandDropdown } from './CommandDropdown';
 import { DropDownUI } from './index.js';
-import { dropdown as dropdownAtoms } from '../../../../store/agentAtom.js';
+import { dropdown as dropdownAtoms } from '../../../../store/ui-state.js';
 
 
 export function DropDownSelect() {

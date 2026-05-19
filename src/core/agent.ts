@@ -1,34 +1,12 @@
-import { agentTurn } from '../components/agent/agentTurn';
-import { ui } from '../components/ui';
-import { setupAgentEvents } from './handleUIFlush';
-import {
-  messagesAtom,
-  model,
-  session,
-} from '../store/agentAtom.js';
-import { MicaPlugin } from '../plugins/MicaPlugin';
+import { agentTurn } from '../agent/turn.js';
+import { ui } from '../components/ui/index.js';
+import { messagesAtom } from '../store/conversation.js';
+import { model } from '../store/config.js';
+import { session } from '../store/ui-state.js';
+import { MicaPlugin } from '../plugins/MicaPlugin.js';
+import { bootstrap } from '../bootstrap.js';
 
-import mitt from 'mitt';
-
-// ── API key 更新事件 ──
-export const apiKeyEvents = mitt<{ update: string }>();
-
-ui.TerminalInput.emitter.on('submit', async (text) => {
-  const startTime = Date.now();
-
-  try {
-    await agentTurn.run(text);
-    agentTurn.events.emit('status', { type: 'completed', elapsedMs: Date.now() - startTime });
-  } catch (error) {
-    agentTurn.events.emit('status', {
-      type: 'error',
-      message: error instanceof Error ? error.message : String(error),
-    });
-    console.error('Agent error:', error);
-  }
-});
-
-setupAgentEvents();
+bootstrap();
 
 const _installedPlugins: MicaPlugin[] = [];
 

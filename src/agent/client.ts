@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { api } from "../../store/agentAtom";
+import Anthropic from '@anthropic-ai/sdk';
+import { api } from '../store/config.js';
 
 let _client: Anthropic | null = null;
 

@@ -1,11 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { systemPrompt } from '../../prompts/index';
+import { systemPrompt } from '../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { contextSizeAtom, estimateContextSize, messagesAtom, model, EFFORT_TOKENS } from '../../store/agentAtom.js';
+import { contextSizeAtom, estimateContextSize, messagesAtom } from '../store/conversation.js';
+import { EFFORT_TOKENS, model } from '../store/config.js';
+import type { WorkingStatus } from '../store/ui-state.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
-import { getClient } from './client';
+import { getClient } from './client.js';
 import mitt from 'mitt';
-import type { WorkingStatus } from '../../store/agentAtom.js';
 
 export type AgentTurnEvents = {
   'stream:create': MessageStream<null>;

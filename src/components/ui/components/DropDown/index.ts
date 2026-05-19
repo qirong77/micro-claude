@@ -1,7 +1,7 @@
 import mitt from 'mitt';
 import type { DropdownItem } from './CommandDropdown.js';
 import { DropDownSelect } from './DropDownSelect.js';
-import { dropdown } from '../../../../store/agentAtom.js';
+import { dropdown } from '../../../../store/ui-state.js';
 import {
   showQuickCommands,
   hideQuickCommands,
@@ -11,7 +11,7 @@ import {
 
 // ── Types ──────────────────────────────────────────────
 
-export type { DropdownItem, DropdownState } from '../../../../store/agentAtom.js';
+export type { DropdownItem, DropdownState } from '../../../../store/ui-state.js';
 
 type Events = {
   /** 选中了下拉项 */
