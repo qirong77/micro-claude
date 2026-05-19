@@ -50,10 +50,15 @@ export abstract class MicaPlugin {
     quickCommandsAtom.set([...quickCommandsAtom.get(), command]);
   }
 
-  /** 显示一条消息（通过 UI 组件事件） */
-  protected showMessage(text: string): string {
+  /** 显示一条消息（通过 UI 组件事件），默认 3s 后自动清除 */
+  protected showMessage(text: string, delay: number = 3000): string {
     const msgId = `msg-${uuid()}`;
     this.agent.ui.MessageBar.emitter.emit('add', { id: msgId, text });
+    if (delay) {
+      setTimeout(() => {
+        this.removeMessage(msgId);
+      }, delay);
+    }
     return msgId;
   }
 

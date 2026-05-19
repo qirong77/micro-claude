@@ -39,7 +39,7 @@ export function CommandDropdown({
         const isSelected = i === selectedIndex;
         return (
           <Box key={item.key}>
-            <Box width={20}>
+            <Box minWidth={20}>
               <Text color={isSelected ? 'claude' : 'inactive'}>{item.label}</Text>
             </Box>
             <Box>

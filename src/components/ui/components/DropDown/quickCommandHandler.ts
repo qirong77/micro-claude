@@ -127,15 +127,14 @@ function executeSelected(): void {
   const cmd = commands.find((c) => c.name === selected.key);
 
   if (cmd) {
+    const beforeItems = dropdown.atom.get().items;
     cmd.action();
+    const after = dropdown.atom.get();
 
-    const afterDropdown = dropdown.atom.get();
-    if (afterDropdown.visible && afterDropdown.items.length > 0) {
-      dropdown.inputValue.set('');
-      return;
+    // 如果 action 没有变更 dropdown 内容（如 /clear），则关闭下拉列表
+    if (after.visible && after.items === beforeItems) {
+      closeAndClear();
     }
-
-    closeAndClear();
     return;
   }
 

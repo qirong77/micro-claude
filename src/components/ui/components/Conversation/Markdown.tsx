@@ -547,7 +547,11 @@ function hasMarkdownSyntax(s: string): boolean {
 }
 
 function hashContent(content: string): string {
-  return Bun.hash(content).toString();
+  let hash = 5381;
+  for (let i = 0; i < content.length; i++) {
+    hash = ((hash << 5) + hash + content.charCodeAt(i)) | 0;
+  }
+  return String(hash);
 }
 
 function cachedLexer(content: string): Token[] {
