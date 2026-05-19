@@ -108,6 +108,13 @@ export const model = {
 
 export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
 
+export function estimateContextSize(messages: Anthropic.MessageParam[]): number {
+  const bytes = new TextEncoder().encode(JSON.stringify(messages)).length;
+  return Math.round((bytes / 1024) * 10) / 10;
+}
+
+export const contextSizeAtom = atom<number>(0);
+
 // ═══════════════════════════════════════════════════════════
 // WorkingStatus
 // ═══════════════════════════════════════════════════════════

@@ -1,7 +1,7 @@
 import { Box, Text } from '@anthropic/ink';
 import React from 'react';
 import { useSchedulState } from '../../hooks/index.js';
-import { dropdown, model, workingStatusAtom } from '../../../../store/agentAtom.js';
+import { contextSizeAtom, dropdown, model, workingStatusAtom } from '../../../../store/agentAtom.js';
 import { C } from '../../data.js';
 import { Spin } from '../common/Spin.js';
 import { DropDownUI } from '../DropDown/index.js';
@@ -25,6 +25,7 @@ export function WorkingStatus() {
   const info = useSchedulState(workingStatusAtom);
   const modelValue = useSchedulState(model.atom);
   const effort = useSchedulState(model.effort);
+  const contextSize = useSchedulState(contextSizeAtom);
   const dropdownItems = useSchedulState(dropdown.atom);
 
   if (dropdownItems.items.length > 0) return null;
@@ -64,7 +65,7 @@ export function WorkingStatus() {
       </Box>
       <Box flexShrink={0} paddingRight={4}>
         <Text color={C.dim} wrap="wrap">
-          {modelValue} · {effort}
+          {modelValue} · {effort}{contextSize > 0 ? ` · ${contextSize}KB` : ''}
         </Text>
       </Box>
     </Box>

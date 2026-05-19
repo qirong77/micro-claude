@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
-import { messagesAtom, model, EFFORT_TOKENS } from '../../store/agentAtom.js';
+import { contextSizeAtom, estimateContextSize, messagesAtom, model, EFFORT_TOKENS } from '../../store/agentAtom.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client';
 import mitt from 'mitt';
@@ -87,6 +87,7 @@ class AgentTurn {
 
     const finalMessage = await stream.finalMessage();
     messagesAtom.set([...messages, finalMessage]);
+    contextSizeAtom.set(estimateContextSize([...messages, finalMessage]));
 
     if (completedToolUses.length > 0) {
       const toolStartTime = Date.now();
@@ -141,10 +142,12 @@ class AgentTurn {
         }
       }
 
-      messagesAtom.set([
+      const withToolResults = [
         ...messagesAtom.get(),
-        { role: 'user', content: toolResults },
-      ]);
+        { role: 'user', content: toolResults } as Anthropic.MessageParam,
+      ];
+      messagesAtom.set(withToolResults);
+      contextSizeAtom.set(estimateContextSize(withToolResults));
     }
 
     this.events.emit('status', { type: 'idle' });
@@ -152,7 +155,9 @@ class AgentTurn {
   }
 
   private async _coreRun(userInput: string, onIteration?: (result: IterationResult) => void) {
-    messagesAtom.set([...messagesAtom.get(), { role: 'user', content: userInput }]);
+    const updated = [...messagesAtom.get(), { role: 'user', content: userInput } as Anthropic.MessageParam];
+    messagesAtom.set(updated);
+    contextSizeAtom.set(estimateContextSize(updated));
     while (true) {
       const result = await this.executeSingleIteration();
       onIteration?.(result);
