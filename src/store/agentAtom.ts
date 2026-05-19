@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { atom } from 'nanostores';
 import type Anthropic from '@anthropic-ai/sdk';
 import { createPersistedAtom } from './createPersistenceAtom.js';
+import { getContextUsage } from 'src/utils/getContextUsage.js';
 
 dotenv.config({ override: true });
 
@@ -94,6 +95,7 @@ export const model = {
     // { name: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
     { name: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
   ]),
+  conextWindowSize:atom('1M'),
   effortOptions: atom<EffortOption[]>([
     { name: 'none', label: 'None' },
     { name: 'low', label: 'Low' },
@@ -109,8 +111,8 @@ export const model = {
 export const messagesAtom = atom<Anthropic.MessageParam[]>([]);
 
 export function estimateContextSize(messages: Anthropic.MessageParam[]): number {
-  const bytes = new TextEncoder().encode(JSON.stringify(messages)).length;
-  return Math.round((bytes / 1024) * 10) / 10;
+  // @ts-ignore
+  return getContextUsage(messages)
 }
 
 export const contextSizeAtom = atom<number>(0);
