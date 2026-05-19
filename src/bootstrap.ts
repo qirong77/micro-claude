@@ -1,6 +1,6 @@
 import { agentTurn } from './agent/turn.js';
 import { ui } from './components/ui/index.js';
-import { setupAgentEvents } from './ui/adapters/agentEvents.js';
+import { setupAgentEvents } from './core/agentEvents.js';
 
 export function bootstrap() {
   ui.TerminalInput.emitter.on('submit', async (text) => {

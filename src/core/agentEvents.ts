@@ -1,14 +1,19 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
-import { agentTurn } from '../../agent/turn.js';
-import { messagesAtom } from '../../store/conversation.js';
-import { logTextAtom, toolCallsAtom, workingStatusAtom } from '../../store/ui-state.js';
-import { ui } from '../../components/ui/index.js';
-import { getToolDisplayText } from '../../tools/index.js';
+import { agentTurn } from '../agent/turn.js';
+import { messagesAtom } from '../store/conversation.js';
+import { logTextAtom, toolCallsAtom, workingStatusAtom } from '../store/ui-state.js';
+import { ui } from '../components/ui/index.js';
+import { getToolDisplayText } from '../tools/index.js';
 
 type StreamingMessage = Anthropic.MessageParam & { status?: 'streaming' };
 
+let initialized = false;
+
 export function setupAgentEvents() {
+  if (initialized) return;
+  initialized = true;
+
   const logBuffers = new Map<string, string[]>();
 
   const flushLogBuffer = (toolUseId: string) => {
