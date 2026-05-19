@@ -60,18 +60,10 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
     });
 
     this.addQuickCommand({
-      name: 'session-save',
-      description: '保存当前对话',
+      name: 'resume',
+      description: '保存/恢复对话',
       action: () => {
-        this._saveSession();
-      },
-    });
-
-    this.addQuickCommand({
-      name: 'session',
-      description: '列出已保存的对话列表',
-      action: () => {
-        this._showSessionList();
+        this._showResumeList();
       },
     });
 
@@ -140,35 +132,40 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
     this.atoms.sessionsIndex.set(updated);
   }
 
-  private _showSessionList() {
+  private _showResumeList() {
     const idx = this.atoms.sessionsIndex.get();
-    if (idx.length === 0) {
-      this.showMessage('没有已保存的对话');
-      return;
+
+    const items = [
+      { key: '__save__', label: '保存当前对话', description: '/session-save' },
+    ];
+
+    if (idx.length > 0) {
+      const sorted = [...idx].sort((a, b) => b.updatedAt - a.updatedAt);
+      for (const s of sorted) {
+        items.push({
+          key: s.id,
+          label: s.title,
+          description: formatTime(s.updatedAt),
+        });
+      }
     }
 
-    const sorted = [...idx].sort((a, b) => b.updatedAt - a.updatedAt);
-
-    const items = sorted.map((s) => ({
-      key: s.id,
-      label: s.title,
-      description: formatTime(s.updatedAt),
-    }));
-
-    // 通过 UI 组件的 dropdown atom 设置状态
     this.agent.ui.DropDown.atomData.dropdown.set({
       visible: true,
       items,
       selectedIndex: 0,
-      title: 'select session:',
+      title: 'resume:',
       emptyMessage: 'no sessions',
     });
 
-    // 通过 DropDownUI emitter 监听选中
     const handler = (item: any) => {
       if (!item) return;
       this.agent.ui.DropDown.emitter.off('select', handler);
-      this._switchToSession(item.key);
+      if (item.key === '__save__') {
+        this._saveSession();
+      } else {
+        this._switchToSession(item.key);
+      }
     };
     this.agent.ui.DropDown.emitter.on('select', handler);
   }
