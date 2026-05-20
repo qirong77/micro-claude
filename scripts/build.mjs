@@ -29,9 +29,5 @@ await esbuild.build({
 });
 
 import { chmodSync } from 'node:fs';
-import { installGlobal } from './install-global.mjs';
-
 chmodSync('./dist/bin/index.js', 0o755);
 console.log('Build complete');
-
-installGlobal();
