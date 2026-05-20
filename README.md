@@ -66,7 +66,7 @@ export class MyPlugin extends MicaPlugin {
 # 安装依赖
 npm install
 
-# 构建并安装到当前 Node 全局（fnm use 的版本）
+# 构建并安装到所有 fnm 已安装的 Node 全局
 npm run build
 ```
 
