@@ -3,6 +3,7 @@ import { systemPrompt } from '../prompts/index';
 import { executeTool, toolDefinitions } from '../tools/index';
 import { contextSizeAtom, estimateContextSize, messagesAtom } from '../store/conversation.js';
 import { EFFORT_TOKENS, model } from '../store/config.js';
+import { appendSystemLog } from '../store/logAtom.js';
 import type { WorkingStatus } from '../store/ui-state.js';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { getClient } from './client.js';
@@ -49,6 +50,7 @@ class AgentTurn {
     const modelName = model.atom.get();
     const effort = model.effort.get();
 
+    appendSystemLog(`迭代开始：model=${modelName} effort=${effort}`);
     this.events.emit('status', { type: 'connecting' });
 
     const stream = getClient().messages.stream({
@@ -89,6 +91,9 @@ class AgentTurn {
     const finalMessage = await stream.finalMessage();
     messagesAtom.set([...messages, finalMessage]);
     contextSizeAtom.set(estimateContextSize([...messages, finalMessage]));
+    appendSystemLog(
+      `迭代响应：${completedToolUses.length > 0 ? `${completedToolUses.length} 个工具调用` : '无工具调用'}`,
+    );
 
     if (completedToolUses.length > 0) {
       const toolStartTime = Date.now();
@@ -158,13 +163,18 @@ class AgentTurn {
   }
 
   private async _coreRun(userInput: string, onIteration?: (result: IterationResult) => void) {
+    appendSystemLog('Agent run 开始');
     const updated = [...messagesAtom.get(), { role: 'user', content: userInput } as Anthropic.MessageParam];
     messagesAtom.set(updated);
     contextSizeAtom.set(estimateContextSize(updated));
     while (true) {
       const result = await this.executeSingleIteration();
       onIteration?.(result);
-      if (!result.hasToolUse) return;
+      if (!result.hasToolUse) {
+        appendSystemLog('Agent run 结束（无待执行工具）');
+        return;
+      }
+      appendSystemLog('继续下一轮迭代（存在工具调用）');
     }
   }
 

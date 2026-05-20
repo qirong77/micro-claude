@@ -2,18 +2,57 @@ import type Anthropic from '@anthropic-ai/sdk';
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream.mjs';
 import { agentTurn } from '../agent/turn.js';
 import { messagesAtom } from '../store/conversation.js';
+import { appendSystemLog } from '../store/logAtom.js';
 import { logTextAtom, toolCallsAtom, workingStatusAtom } from '../store/ui-state.js';
+import type { WorkingStatus } from '../store/ui-state.js';
 import { ui } from '../components/ui/index.js';
 import { getToolDisplayText } from '../tools/index.js';
+
+function formatStatusLog(status: WorkingStatus): string {
+  switch (status.type) {
+    case 'idle':
+      return '状态：空闲';
+    case 'connecting':
+      return '状态：连接 API';
+    case 'thinking':
+      return '状态：思考中';
+    case 'streaming':
+      return '状态：流式输出';
+    case 'calling_tool':
+      return status.elapsedMs != null
+        ? `状态：执行工具 (${(status.elapsedMs / 1000).toFixed(1)}s)`
+        : '状态：执行工具';
+    case 'completed':
+      return status.elapsedMs != null
+        ? `状态：完成 (${(status.elapsedMs / 1000).toFixed(1)}s)`
+        : '状态：完成';
+    case 'error':
+      return `状态：错误${status.message ? ` — ${status.message}` : ''}`;
+    default:
+      return '状态：未知';
+  }
+}
 
 type StreamingMessage = Anthropic.MessageParam & { status?: 'streaming' };
 
 let initialized = false;
 
+function shouldLogStatus(status: WorkingStatus, prev: WorkingStatus | null): boolean {
+  if (!prev || status.type !== prev.type) return true;
+  if (status.type === 'calling_tool' && prev.type === 'calling_tool') {
+    return prev.elapsedMs == null && status.elapsedMs != null;
+  }
+  if (status.type === 'error' && prev.type === 'error') {
+    return status.message !== prev.message;
+  }
+  return false;
+}
+
 export function setupAgentEvents() {
   if (initialized) return;
   initialized = true;
 
+  let lastStatus: WorkingStatus | null = null;
   const logBuffers = new Map<string, string[]>();
 
   const flushLogBuffer = (toolUseId: string) => {
@@ -27,6 +66,7 @@ export function setupAgentEvents() {
   const clearLogBuffers = () => logBuffers.clear();
 
   agentTurn.events.on('stream:create', (stream: MessageStream<null>) => {
+    appendSystemLog('流：创建消息流');
     let thinkingText = '';
     let streamingText = '';
     let textStarted = false;
@@ -40,6 +80,7 @@ export function setupAgentEvents() {
     stream.on('text', (chunk) => {
       if (!textStarted) {
         textStarted = true;
+        appendSystemLog('流：开始文本输出');
         toolCallsAtom.set([]);
         logTextAtom.set('');
         clearLogBuffers();
@@ -66,6 +107,7 @@ export function setupAgentEvents() {
     });
 
     stream.on('end', () => {
+      appendSystemLog('流：消息流结束');
       const messages = messagesAtom.get() as StreamingMessage[];
       const streamingIdx = messages.findIndex((msg) => msg.status === 'streaming');
       if (streamingIdx !== -1) {
@@ -83,7 +125,10 @@ export function setupAgentEvents() {
     const idx = existing.findIndex((t) => t.id === toolUseId);
 
     if (completed) {
+      appendSystemLog(`工具完成：${toolName}`);
       flushLogBuffer(toolUseId);
+    } else if (idx === -1) {
+      appendSystemLog(`工具调用：${toolName}`);
     }
 
     if (idx !== -1) {
@@ -108,6 +153,11 @@ export function setupAgentEvents() {
   });
 
   agentTurn.events.on('status', (status) => {
+    if (shouldLogStatus(status, lastStatus)) {
+      appendSystemLog(formatStatusLog(status));
+    }
+    lastStatus = status;
+
     if (status.type === 'connecting') {
       ui.MessageBar.emitter.emit('clear');
     }
