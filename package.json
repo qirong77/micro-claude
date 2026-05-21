@@ -18,6 +18,7 @@
     "@types/node": "^25.6.2",
     "auto-bind": "^5.0.1",
     "bidi-js": "^1.0.3",
+    "chalk": "^5.6.2",
     "cli-boxes": "^4.0.1",
     "cli-highlight": "^2.1.11",
     "code-excerpt": "^4.0.0",

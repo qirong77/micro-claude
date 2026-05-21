@@ -1,3 +1,5 @@
+import './polyfill.js';
+
 import { MicaAgent } from './core/agent.js';
 import { ErrorHandlerPlugin } from './plugins/agent/error-handler-plugin.js';
 import { AutoCompactPlugin } from './plugins/agent/auto-compact-plugin.js';
