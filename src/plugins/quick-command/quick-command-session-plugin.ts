@@ -1,8 +1,8 @@
-import { writeFile, readFile, mkdir } from 'node:fs/promises';
+import { writeFile, readFile, mkdir, unlink } from 'node:fs/promises';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { MicaPlugin } from '../MicaPlugin';
-import { session, type SessionMeta } from '../../store/ui-state.js';
+import { session, type DropdownItem, type SessionMeta } from '../../store/ui-state.js';
 
 // Re-export for backward compatibility
 export type { SessionMeta };
@@ -36,6 +36,8 @@ function formatTime(ts: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+
 
 export class QuickCommandSessionPlugin extends MicaPlugin {
   private _currentSessionId: string | null = null;
@@ -93,13 +95,10 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       ? firstUserMsg.content.slice(0, 60)
       : 'untitled';
 
-    const formattedTime = formatTime(now);
-    const fullTitle = `${title} — ${formattedTime}`;
-
     const id = `${now}-${Math.random().toString(36).slice(2, 8)}`;
     const meta: SessionMeta = {
       id,
-      title: fullTitle,
+      title,
       createdAt: now,
       updatedAt: now,
     };
@@ -111,7 +110,7 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
     this.atoms.currentSessionId.set(id);
     this._currentSessionId = id;
 
-    this.showMessage(`会话已保存: ${fullTitle}`);
+    this.showMessage(`会话已保存: ${title}`);
   }
 
   private async _persistMessages(id: string, messages: readonly any[]) {
@@ -132,17 +131,22 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
   private _showResumeList() {
     const idx = this.atoms.sessionsIndex.get();
 
-    const items = [
+    const items: DropdownItem[] = [
       { key: '__save__', label: '保存当前对话', description: '/session-save' },
     ];
 
     if (idx.length > 0) {
+      items.push({
+        key: '__clear__',
+        label: '清空所有会话',
+        description: '删除本地记录',
+      });
       const sorted = [...idx].sort((a, b) => b.updatedAt - a.updatedAt);
       for (const s of sorted) {
         items.push({
           key: s.id,
           label: s.title,
-          description: formatTime(s.updatedAt),
+          suffix: { text: formatTime(s.updatedAt) },
         });
       }
     }
@@ -160,11 +164,37 @@ export class QuickCommandSessionPlugin extends MicaPlugin {
       this.agent.ui.DropDown.emitter.off('select', handler);
       if (item.key === '__save__') {
         this._saveSession();
+      } else if (item.key === '__clear__') {
+        void this._clearAllSessions();
       } else {
         this._switchToSession(item.key);
       }
     };
     this.agent.ui.DropDown.emitter.on('select', handler);
+  }
+
+  private async _clearAllSessions() {
+    const idx = [...this.atoms.sessionsIndex.get()];
+    if (idx.length === 0) {
+      this.showMessage('没有可清空的会话');
+      return;
+    }
+
+    this._suppressAutoSave = true;
+    if (this._pendingAutoSave) clearTimeout(this._pendingAutoSave);
+
+    await Promise.all(
+      idx.map((s) =>
+        unlink(resolve(SESSIONS_DIR, `${s.id}.json`)).catch(() => {}),
+      ),
+    );
+
+    this._currentSessionId = null;
+    this.atoms.currentSessionId.set('');
+    this.atoms.sessionsIndex.set([]);
+    this._suppressAutoSave = false;
+
+    this.showMessage(`已清空 ${idx.length} 个本地会话`);
   }
 
   private async _switchToSession(sessionId: string) {
